@@ -1,0 +1,59 @@
+# CODEOWNERS file for OpenPilot
+# This file defines code owners who will be automatically requested for review
+# when a pull request modifies files they own.
+#
+# Learn more: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default owners for everything in the repo
+* @dayahere
+
+# Core library - requires core team review
+/core/ @dayahere
+/core/src/ai-engine/ @dayahere
+/core/src/context-manager/ @dayahere
+
+# Mobile application
+/mobile/ @dayahere
+
+# Desktop application
+/desktop/ @dayahere
+
+# Web application
+/web/ @dayahere
+
+# Backend API
+/backend/ @dayahere
+
+# VS Code extension
+/vscode-extension/ @dayahere
+
+# Tests - requires test maintainer review
+/tests/ @dayahere
+**/test*/ @dayahere
+**/__tests__/ @dayahere
+*.test.ts @dayahere
+*.test.tsx @dayahere
+*.spec.ts @dayahere
+
+# CI/CD workflows - requires DevOps review
+/.github/ @dayahere
+/.github/workflows/ @dayahere
+/docker-compose*.yml @dayahere
+/Dockerfile* @dayahere
+
+# Build scripts
+/build-local.ps1 @dayahere
+/build-local.sh @dayahere
+*.bat @dayahere
+*.sh @dayahere
+
+# Documentation - anyone can review
+/docs/ @dayahere
+*.md @dayahere
+
+# Configuration files
+package.json @dayahere
+tsconfig.json @dayahere
+jest.config.js @dayahere
+.gitignore @dayahere
+.dockerignore @dayahere
