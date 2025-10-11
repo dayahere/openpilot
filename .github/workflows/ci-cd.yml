@@ -24,10 +24,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-          cache-dependency-path: |
-            core/package-lock.json
-            tests/package-lock.json
             
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -101,16 +97,17 @@ jobs:
           cache-to: type=gha,mode=max
           
       - name: Run tests in Docker
-        run: docker-compose -f docker-compose.test.yml run --rm test-runner
+        run: docker compose -f docker-compose.test.yml run --rm test-runner
         
       - name: Run coverage in Docker
-        run: docker-compose -f docker-compose.test.yml run --rm test-coverage
+        run: docker compose -f docker-compose.test.yml run --rm test-coverage
         
       - name: Extract coverage from Docker
+        if: always()
         run: |
-          docker create --name coverage-container openpilot-test-runner:latest
-          docker cp coverage-container:/app/tests/coverage ./coverage-docker
-          docker rm coverage-container
+          # Coverage is already available in the tests/coverage directory from the Docker run
+          mkdir -p coverage-docker
+          docker compose -f docker-compose.test.yml run --rm -v $(pwd)/coverage-docker:/coverage test-runner sh -c "cp -r /app/tests/coverage/* /coverage/ 2>/dev/null || true"
           
       - name: Upload Docker test coverage
         uses: actions/upload-artifact@v4
