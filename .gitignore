@@ -99,3 +99,7 @@ desktop/release/
 # Web
 web/build/
 .next/
+
+# Build Artifacts
+build-artifacts/
+*-build-artifacts-*.zip
