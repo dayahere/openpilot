@@ -1,0 +1,82 @@
+version: '3.8'
+
+services:
+  # Main test runner
+  test-runner:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    container_name: openpilot-tests
+    volumes:
+      - ./core:/app/core
+      - ./tests:/app/tests
+      - ./scripts:/app/scripts
+      - test-coverage:/app/coverage
+    environment:
+      - NODE_ENV=test
+      - CI=true
+    command: npm test --prefix tests
+
+  # Test with coverage
+  test-coverage:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    container_name: openpilot-test-coverage
+    volumes:
+      - ./core:/app/core
+      - ./tests:/app/tests
+      - ./coverage:/app/coverage
+    environment:
+      - NODE_ENV=test
+      - CI=true
+    command: npm run test:coverage --prefix tests
+
+  # Integration tests only
+  test-integration:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    container_name: openpilot-test-integration
+    volumes:
+      - ./core:/app/core
+      - ./tests:/app/tests
+    environment:
+      - NODE_ENV=test
+      - CI=true
+    command: npm run test:integration --prefix tests
+
+  # E2E tests with web app
+  test-e2e:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    container_name: openpilot-test-e2e
+    volumes:
+      - ./web:/app/web
+      - ./tests:/app/tests
+    environment:
+      - NODE_ENV=test
+      - CI=true
+    ports:
+      - "3000:3000"
+    command: >
+      sh -c "cd /app/web && npm start & 
+             sleep 10 && 
+             cd /app/tests && npm run test:e2e"
+
+  # Auto-fix loop
+  test-autofix:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    container_name: openpilot-test-autofix
+    volumes:
+      - ./:/app
+    environment:
+      - NODE_ENV=test
+      - CI=true
+    command: python3 scripts/run-tests.py
+
+volumes:
+  test-coverage:

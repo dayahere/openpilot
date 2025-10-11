@@ -1,0 +1,101 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Testing
+coverage/
+*.cover
+.hypothesis/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# IDEs
+.vscode/
+!.vscode/extensions.json
+!.vscode/launch.json
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Build outputs
+*.vsix
+out/
+dist/
+build/
+*.tsbuildinfo
+
+# Environment
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+*.log
+
+# OS
+Thumbs.db
+.DS_Store
+
+# AI Models (local cache)
+models/
+.cache/
+*.bin
+*.safetensors
+
+# Temporary
+tmp/
+temp/
+*.tmp
+
+# Mobile
+*.apk
+*.aab
+*.ipa
+ios/Pods/
+android/.gradle/
+android/app/build/
+
+# Electron
+desktop/dist/
+desktop/release/
+
+# Web
+web/build/
+.next/
