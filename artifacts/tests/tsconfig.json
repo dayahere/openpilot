@@ -1,0 +1,28 @@
+{
+  "extends": "../core/tsconfig.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "rootDir": "..",
+    "baseUrl": ".",
+    "paths": {
+      "@openpilot/core": ["../core/src"],
+      "@openpilot/core/*": ["../core/src/*"]
+    },
+    "types": ["jest", "node"],
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "moduleResolution": "node"
+  },
+  "include": [
+    "integration/**/*",
+    "e2e/**/*",
+    "helpers/**/*",
+    "../core/src/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
+}

@@ -1,0 +1,54 @@
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build outputs
+dist/
+build/
+out/
+.next/
+*.tsbuildinfo
+
+# Coverage
+coverage/
+.nyc_output/
+*.lcov
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Logs
+logs/
+*.log
+
+# Temp
+tmp/
+temp/
+.cache/
+
+# Git
+.git/
+.gitignore
+
+# Documentation (don't need in container)
+docs/*.md
+
+# Test results
+test-results/
+playwright-report/

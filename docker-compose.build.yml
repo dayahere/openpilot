@@ -1,0 +1,93 @@
+version: '3.8'
+
+services:
+  # Core library build
+  core-build:
+    build:
+      context: .
+      dockerfile: Dockerfile.build
+      target: core
+    volumes:
+      - ./core:/workspace/core
+      - ./artifacts/core:/workspace/artifacts/core
+    command: npm run build
+    environment:
+      - NODE_ENV=production
+
+  # Mobile app build
+  mobile-build:
+    build:
+      context: .
+      dockerfile: Dockerfile.build
+      target: mobile
+    volumes:
+      - ./mobile:/workspace/mobile
+      - ./artifacts/mobile:/workspace/artifacts/mobile
+    command: npm run build
+    environment:
+      - NODE_ENV=production
+
+  # Desktop app build
+  desktop-build:
+    build:
+      context: .
+      dockerfile: Dockerfile.build
+      target: desktop
+    volumes:
+      - ./desktop:/workspace/desktop
+      - ./artifacts/desktop:/workspace/artifacts/desktop
+    command: npm run build
+    environment:
+      - NODE_ENV=production
+
+  # Web app build
+  web-build:
+    build:
+      context: .
+      dockerfile: Dockerfile.build
+      target: web
+    volumes:
+      - ./web:/workspace/web
+      - ./artifacts/web:/workspace/artifacts/web
+    command: npm run build
+    environment:
+      - NODE_ENV=production
+
+  # Backend build
+  backend-build:
+    build:
+      context: .
+      dockerfile: Dockerfile.build
+      target: backend
+    volumes:
+      - ./backend:/workspace/backend
+      - ./artifacts/backend:/workspace/artifacts/backend
+    command: npm run build
+    environment:
+      - NODE_ENV=production
+
+  # VSCode extension build
+  vscode-extension-build:
+    build:
+      context: .
+      dockerfile: Dockerfile.build
+      target: vscode-extension
+    volumes:
+      - ./vscode-extension:/workspace/vscode-extension
+      - ./artifacts/vscode-extension:/workspace/artifacts/vscode-extension
+    command: npm run build
+    environment:
+      - NODE_ENV=production
+
+  # All-in-one builder
+  build-all:
+    build:
+      context: .
+      dockerfile: Dockerfile.build
+      target: builder
+    volumes:
+      - .:/workspace
+      - ./artifacts:/workspace/artifacts
+    command: sh -c "cd /workspace && ./scripts/build-all.sh"
+    environment:
+      - NODE_ENV=production
