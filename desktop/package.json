@@ -1,7 +1,7 @@
 {
-  "name": "@openpilot/web",
+  "name": "@openpilot/desktop",
   "version": "1.0.0",
-  "description": "OpenPilot Web Progressive Web App",
+  "description": "OpenPilot Desktop Electron Application",
   "private": true,
   "scripts": {
     "start": "react-scripts start",
