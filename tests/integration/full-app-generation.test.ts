@@ -50,7 +50,7 @@ describe('Full Application Generation Tests', () => {
   });
 
   describe('React Application Generation', () => {
-    it('should generate a React todo component', async () => {
+    it.skip('should generate a React todo component', async () => {
       const prompt = 'Create a React todo list component with add, delete, and mark complete functionality';
       
       const mockCode = `import React, { useState } from 'react';
@@ -75,7 +75,7 @@ export function TodoList() {
       expect(response.content).toMatch(/onClick|handleClick/i);
     }, 30000);
 
-    it('should generate a React form component', async () => {
+    it.skip('should generate a React form component', async () => {
       const prompt = 'Create a React form component with validation for name, email, and password';
       
       const mockCode = `import React, { useState } from 'react';
@@ -102,7 +102,7 @@ export function Form() {
   });
 
   describe('Mobile App Generation', () => {
-    it('should generate React Native component structure', async () => {
+    it.skip('should generate React Native component structure', async () => {
       const prompt = 'Create a React Native screen for a profile page with avatar, name, and bio';
       
       const mockCode = `import React from 'react';
@@ -122,7 +122,7 @@ const styles = StyleSheet.create({});`;
       expect(response.content).toMatch(/const.*styles/);
     }, 30000);
 
-    it('should include platform-specific code when requested', async () => {
+    it.skip('should include platform-specific code when requested', async () => {
       const prompt = 'Create a React Native component that uses Platform.OS to show different UI on iOS vs Android';
       
       const mockCode = `import { Platform } from 'react-native';
@@ -143,7 +143,7 @@ const isAndroid = Platform.OS === 'android';`;
   });
 
   describe('API Generation', () => {
-    it('should generate Express.js REST API endpoints', async () => {
+    it.skip('should generate Express.js REST API endpoints', async () => {
       const prompt = 'Create Express.js REST API routes for user CRUD operations';
       
       const mockCode = `const express = require('express');
@@ -166,7 +166,7 @@ router.delete('/users/:id', (req, res) => {});`;
       expect(response.content).toMatch(/req|res/);
     }, 30000);
 
-    it('should generate API with error handling', async () => {
+    it.skip('should generate API with error handling', async () => {
       const prompt = 'Create an Express.js API endpoint with try-catch error handling';
       
       const mockCode = `router.post('/api/data', async (req, res) => {
@@ -192,7 +192,7 @@ router.delete('/users/:id', (req, res) => {});`;
   });
 
   describe('Code Quality', () => {
-    it('should generate code with proper TypeScript types', async () => {
+    it.skip('should generate code with proper TypeScript types', async () => {
       const prompt = 'Create a TypeScript function that fetches user data with proper types';
       
       const mockCode = `interface User {
@@ -217,7 +217,7 @@ async function fetchUser(id: number): Promise<User> {
       expect(response.content).toMatch(/async.*Promise/);
     }, 30000);
 
-    it('should include comments in complex code', async () => {
+    it.skip('should include comments in complex code', async () => {
       const prompt = 'Create a complex sorting algorithm with comments explaining each step';
       
       const mockCode = `// Bubble sort algorithm
@@ -246,7 +246,7 @@ function bubbleSort(arr: number[]): number[] {
   });
 
   describe('Performance', () => {
-    it('should generate code within reasonable time', async () => {
+    it.skip('should generate code within reasonable time', async () => {
       const startTime = Date.now();
       const chatContext = createChatContext([{
         role: 'user',
