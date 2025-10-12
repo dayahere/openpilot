@@ -108,6 +108,16 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
           
+      - name: Install workspace dependencies
+        run: |
+          npm install --legacy-peer-deps
+        continue-on-error: false
+        
+      - name: Install core dependencies (needed for tests)
+        working-directory: ./core
+        run: npm install --legacy-peer-deps
+        continue-on-error: false
+        
       - name: Install test dependencies
         working-directory: ./tests
         run: npm install --legacy-peer-deps
