@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { AIEngine, AIProvider, ChatContext, Message } from '@openpilot/core';
+import { AIEngine, AIProvider, ChatContext, Message } from '../types';
 import ReactMarkdown from 'react-markdown';
 import './ChatInterface.css';
 
@@ -8,16 +8,11 @@ const ChatInterface: React.FC = () => {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [aiEngine] = useState(() => new AIEngine({
-    config: {
-      provider: AIProvider.OLLAMA,
-      model: 'codellama',
-      temperature: 0.7,
-      maxTokens: 2048,
-      topP: 0.9,
-      frequencyPenalty: 0,
-      presencePenalty: 0,
-      offline: false,
-    }
+    provider: AIProvider.OLLAMA,
+    model: 'codellama',
+    temperature: 0.7,
+    maxTokens: 2048,
+    offline: false,
   }));
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -72,8 +67,7 @@ const ChatInterface: React.FC = () => {
         const newMessages = [...prev];
         const lastMessage = newMessages[newMessages.length - 1];
         if (lastMessage && lastMessage.role === 'assistant') {
-          lastMessage.content = response.content;
-          lastMessage.id = response.id;
+          lastMessage.content = response;
         }
         return newMessages;
       });

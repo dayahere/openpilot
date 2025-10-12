@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { AIProvider } from '@openpilot/core';
+import { AIProvider } from '../types';
 import './Settings.css';
 
 const Settings: React.FC = () => {

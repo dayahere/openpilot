@@ -48,7 +48,12 @@ export abstract class BaseAIProvider {
         }
       );
     }
-    throw error;
+    
+    if (error instanceof Error) {
+      throw new AIProviderError(error.message);
+    }
+    
+    throw new AIProviderError('Unknown error occurred');
   }
 }
 

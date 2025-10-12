@@ -23,6 +23,7 @@
     "zod": "^3.22.4"
   },
   "devDependencies": {
+    "@jest/globals": "^29.7.0",
     "@types/jest": "^29.5.10",
     "@types/node": "^20.10.0",
     "@types/uuid": "^9.0.7",
