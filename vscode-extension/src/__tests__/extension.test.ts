@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import * as assert from 'assert';
+// import * as assert from 'assert'; // Unused
 import { activate, deactivate } from '../extension';
 
 // Mock VS Code API
@@ -166,3 +166,4 @@ describe('VSCode Extension', () => {
     });
   });
 });
+

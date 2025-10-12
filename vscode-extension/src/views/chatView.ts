@@ -15,7 +15,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
 
   public resolveWebviewView(
     webviewView: vscode.WebviewView,
-    context: vscode.WebviewViewResolveContext,
+    _context: vscode.WebviewViewResolveContext,
     _token: vscode.CancellationToken
   ) {
     this._view = webviewView;
@@ -82,7 +82,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
       };
 
       const messages = [...(session?.messages || []), userMessage];
-      const chatContext: ChatContext = {
+      const chat_context: ChatContext = {
         messages,
         codeContext,
       };
@@ -95,7 +95,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
 
       // Stream response
       let assistantContent = '';
-      const response = await this.aiEngine.streamChat(chatContext, (chunk) => {
+      const response = await this.aiEngine.streamChat(chat_context, (chunk) => {
         assistantContent += chunk;
         this._view?.webview.postMessage({
           type: 'streamChunk',
@@ -365,3 +365,4 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
 </html>`;
   }
 }
+

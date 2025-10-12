@@ -14,7 +14,7 @@ export class CompletionProvider implements vscode.InlineCompletionItemProvider {
     token: vscode.CancellationToken
   ): Promise<vscode.InlineCompletionItem[] | vscode.InlineCompletionList> {
     // Skip if triggered manually or if there's a completion already
-    if (context.triggerKind === vscode.InlineCompletionTriggerKind.Explicit) {
+    if (context.triggerKind === vscode.InlineCompletionTriggerKind.Invoke) {
       return [];
     }
 
@@ -55,3 +55,4 @@ export class CompletionProvider implements vscode.InlineCompletionItemProvider {
     }
   }
 }
+
