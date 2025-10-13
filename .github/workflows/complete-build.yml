@@ -193,6 +193,7 @@ jobs:
         working-directory: ./vscode-extension
         run: |
           npm install -g @vscode/vsce
+          npm run prepackage
           vsce package --allow-missing-repository
       
       - name: Upload VSCode extension
