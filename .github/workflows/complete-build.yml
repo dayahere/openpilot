@@ -179,7 +179,10 @@ jobs:
       
       - name: Install VSCode extension dependencies
         working-directory: ./vscode-extension
-        run: npm ci --omit=dev --legacy-peer-deps || npm install --production --legacy-peer-deps
+        run: |
+          npm ci --omit=dev --legacy-peer-deps || npm install --production --legacy-peer-deps
+          # Remove @openpilot/core that npm may try to resolve from registry
+          rm -rf node_modules/@openpilot/core || true
       
       - name: Build core library
         working-directory: ./core
