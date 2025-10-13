@@ -163,7 +163,6 @@ jobs:
   # ======================
   build-vscode-extension:
     runs-on: ubuntu-latest
-    continue-on-error: true
     
     steps:
       - name: Checkout code
@@ -190,26 +189,33 @@ jobs:
         working-directory: ./vscode-extension
         run: npm run compile
       
-      - name: Remove symlinked files and prepare for packaging
+      - name: Remove file dependency and copy core dist
         working-directory: ./vscode-extension
         run: |
-          # Remove all symlinked files from core
-          find node_modules/@openpilot/core -type l -delete || true
-          rm -rf node_modules/@openpilot/core/node_modules || true
-          rm -rf node_modules/@openpilot/core/src || true
-          rm -rf node_modules/@openpilot/core/.git || true
-          rm -f node_modules/@openpilot/core/jest.config.js || true
-          rm -f node_modules/@openpilot/core/tsconfig.json || true  
-          rm -f node_modules/@openpilot/core/tsconfig.tsbuildinfo || true
-          rm -f node_modules/@openpilot/core/package-lock.json || true
-          # List what's left to debug
-          ls -la node_modules/@openpilot/core/ || true
+          # Remove the entire @openpilot/core symlinked package
+          rm -rf node_modules/@openpilot || true
+          
+          # Create a clean @openpilot/core package with only dist files
+          mkdir -p node_modules/@openpilot/core
+          cp -r ../core/dist node_modules/@openpilot/core/
+          cp ../core/package.json node_modules/@openpilot/core/
+          
+          # Create a minimal package.json for the copied core
+          echo '{
+            "name": "@openpilot/core",
+            "version": "1.0.0",
+            "main": "dist/index.js",
+            "types": "dist/index.d.ts"
+          }' > node_modules/@openpilot/core/package.json
+          
+          # Verify structure
+          ls -la node_modules/@openpilot/core/
       
       - name: Package VSCode extension
         working-directory: ./vscode-extension
         run: |
           npm install -g @vscode/vsce
-          vsce package --no-yarn --allow-missing-repository
+          vsce package --allow-missing-repository
       
       - name: Upload VSCode extension
         uses: actions/upload-artifact@v4
