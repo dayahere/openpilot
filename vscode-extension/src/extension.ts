@@ -33,6 +33,18 @@ export async function activate(context: vscode.ExtensionContext) {
   sessionManager = new SessionManager(context);
   checkpointManager = new CheckpointManager(context);
 
+  // Watch for configuration changes
+  context.subscriptions.push(
+    vscode.workspace.onDidChangeConfiguration((e) => {
+      if (e.affectsConfiguration('openpilot')) {
+        const newConfig = configManager.getAIConfig();
+        aiEngine.updateConfig(newConfig);
+        console.log('OpenPilot configuration updated:', newConfig);
+        vscode.window.showInformationMessage('OpenPilot configuration updated!');
+      }
+    })
+  );
+
   // Register views
   const chatViewProvider = new ChatViewProvider(
     context.extensionUri,
