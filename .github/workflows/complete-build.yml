@@ -44,7 +44,7 @@ jobs:
         run: npm run build:win
       
       - name: Upload Windows installer
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: windows-installer
           path: desktop/dist/*.exe
@@ -82,14 +82,14 @@ jobs:
         run: npm run build:linux
       
       - name: Upload Linux AppImage
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: linux-appimage
           path: desktop/dist/*.AppImage
           retention-days: 30
       
       - name: Upload Linux .deb
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: linux-deb
           path: desktop/dist/*.deb
@@ -149,7 +149,7 @@ jobs:
         run: ./gradlew assembleRelease
       
       - name: Upload unsigned APK
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: android-apk
           path: web/android/app/build/outputs/apk/release/*.apk
@@ -193,7 +193,7 @@ jobs:
           vsce package --no-dependencies
       
       - name: Upload VSCode extension
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: vscode-extension
           path: vscode-extension/*.vsix
@@ -233,7 +233,7 @@ jobs:
           zip -r ../openpilot-web-${{ github.ref_name }}.zip .
       
       - name: Upload web app
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: web-app
           path: web/openpilot-web-*.zip
@@ -271,7 +271,7 @@ jobs:
         run: npm test -- --coverage --collectCoverageFrom='../core/src/**/*.ts'
       
       - name: Upload coverage reports
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: coverage-reports
           path: tests/coverage/
