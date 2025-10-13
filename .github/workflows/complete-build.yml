@@ -179,7 +179,7 @@ jobs:
       
       - name: Install VSCode extension dependencies
         working-directory: ./vscode-extension
-        run: npm install --legacy-peer-deps
+        run: npm ci --omit=dev --legacy-peer-deps || npm install --production --legacy-peer-deps
       
       - name: Build core library
         working-directory: ./core
@@ -198,15 +198,15 @@ jobs:
           # Create a clean @openpilot/core package with only dist files
           mkdir -p node_modules/@openpilot/core
           cp -r ../core/dist node_modules/@openpilot/core/
-          cp ../core/package.json node_modules/@openpilot/core/
-          
-          # Create a minimal package.json for the copied core
-          echo '{
+          # Create a minimal package.json for the copied core (avoid deps)
+          cat > node_modules/@openpilot/core/package.json << 'EOF'
+          {
             "name": "@openpilot/core",
             "version": "1.0.0",
             "main": "dist/index.js",
             "types": "dist/index.d.ts"
-          }' > node_modules/@openpilot/core/package.json
+          }
+          EOF
           
           # Verify structure
           ls -la node_modules/@openpilot/core/

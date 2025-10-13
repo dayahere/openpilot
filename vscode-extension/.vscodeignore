@@ -1,7 +1,8 @@
-# Ignore everything except out and resources
+# Include compiled output, runtime deps, resources and manifest
 **/*
 !out/**/*.js
 !out/**/*.js.map
+!node_modules/**
 !resources/**
 !package.json
 !README.md
