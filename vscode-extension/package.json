@@ -199,7 +199,6 @@
     "pretest": "npm run compile",
     "test": "node ./out/test/runTest.js",
     "lint": "eslint src --ext ts",
-    "prepackage": "node -e \"const fs=require('fs');const path='node_modules/@openpilot/core/node_modules';if(fs.existsSync(path)){fs.rmSync(path,{recursive:true,force:true});console.log('Removed',path)}\"",
     "package": "vsce package"
   },
   "dependencies": {

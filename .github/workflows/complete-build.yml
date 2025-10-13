@@ -189,11 +189,19 @@ jobs:
         working-directory: ./vscode-extension
         run: npm run compile
       
+      - name: Remove symlinked node_modules
+        working-directory: ./vscode-extension
+        run: |
+          rm -rf node_modules/@openpilot/core/node_modules || true
+          rm -rf node_modules/@openpilot/core/src || true
+          rm -rf node_modules/@openpilot/core/jest.config.js || true
+          rm -rf node_modules/@openpilot/core/tsconfig.json || true
+          rm -rf node_modules/@openpilot/core/tsconfig.tsbuildinfo || true
+      
       - name: Package VSCode extension
         working-directory: ./vscode-extension
         run: |
           npm install -g @vscode/vsce
-          npm run prepackage
           vsce package --allow-missing-repository
       
       - name: Upload VSCode extension
