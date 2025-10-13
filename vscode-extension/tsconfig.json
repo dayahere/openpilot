@@ -18,6 +18,8 @@
     "exclude":  [
                     "node_modules",
                     ".vscode-test",
-                    "out"
+                    "out",
+                    "src/__tests__/integration/**",
+                    "src/__tests__/e2e/**"
                 ]
 }

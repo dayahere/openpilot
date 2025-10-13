@@ -8,7 +8,10 @@
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "lint": "eslint src --ext .ts,.tsx"
+    "lint": "eslint src --ext .ts,.tsx",
+    "build:win": "echo 'Windows build not yet configured'",
+    "build:linux": "echo 'Linux build not yet configured'",
+    "build:mac": "echo 'macOS build not yet configured'"
   },
   "dependencies": {
     "axios": "^1.6.2",
