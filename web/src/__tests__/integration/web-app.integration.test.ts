@@ -3,12 +3,12 @@
  * Tests React web application functionality
  */
 
-import { test, expect, Page } from '@playwright/test';
+import { test, expect, Page, Browser, ConsoleMessage } from '@playwright/test';
 
 test.describe('Web App - Integration Tests', () => {
   let page: Page;
 
-  test.beforeAll(async ({ browser }) => {
+  test.beforeAll(async ({ browser }: { browser: Browser }) => {
     page = await browser.newPage();
     await page.goto('http://localhost:3000');
   });
@@ -49,7 +49,7 @@ test.describe('Web App - Integration Tests', () => {
 
     test('should have no console errors', async () => {
       const errors: string[] = [];
-      page.on('console', (msg) => {
+      page.on('console', (msg: ConsoleMessage) => {
         if (msg.type() === 'error') {
           errors.push(msg.text());
         }
@@ -381,7 +381,7 @@ test.describe('Web App - Integration Tests', () => {
       
       // Add 100 messages
       for (let i = 0; i < 100; i++) {
-        await page.evaluate((msg) => {
+        await page.evaluate((msg: string) => {
           const container = document.getElementById('chat-messages');
           const div = document.createElement('div');
           div.className = 'message user';
@@ -526,3 +526,4 @@ test.describe('Web App - Integration Tests', () => {
     });
   });
 });
+
