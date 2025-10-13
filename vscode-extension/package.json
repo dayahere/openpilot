@@ -4,6 +4,10 @@
   "description": "Free AI coding assistant with chat, completions, and repo analysis",
   "version": "1.0.0",
   "publisher": "openpilot",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dayahere/openpilot.git"
+  },
   "engines": {
     "vscode": "^1.85.0"
   },
