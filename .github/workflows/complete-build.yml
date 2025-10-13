@@ -1,0 +1,360 @@
+# GitHub Actions - Complete Build Workflow
+# Builds: Windows Installer, Linux Packages, Android APK, VSCode Extension, Web App
+
+name: Complete Production Build
+
+on:
+  push:
+    branches: [ main, develop ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  # ======================
+  # DESKTOP: WINDOWS
+  # ======================
+  build-windows-installer:
+    runs-on: windows-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install workspace dependencies
+        run: npm install --workspaces --legacy-peer-deps
+      
+      - name: Install desktop dependencies
+        working-directory: ./desktop
+        run: npm install --legacy-peer-deps
+      
+      - name: Build React app
+        working-directory: ./desktop
+        run: npm run build
+      
+      - name: Build Windows installer
+        working-directory: ./desktop
+        run: npm run build:win
+      
+      - name: Upload Windows installer
+        uses: actions/upload-artifact@v3
+        with:
+          name: windows-installer
+          path: desktop/dist/*.exe
+          retention-days: 30
+  
+  # ======================
+  # DESKTOP: LINUX
+  # ======================
+  build-linux-packages:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install workspace dependencies
+        run: npm install --workspaces --legacy-peer-deps
+      
+      - name: Install desktop dependencies
+        working-directory: ./desktop
+        run: npm install --legacy-peer-deps
+      
+      - name: Build React app
+        working-directory: ./desktop
+        run: npm run build
+      
+      - name: Build Linux packages
+        working-directory: ./desktop
+        run: npm run build:linux
+      
+      - name: Upload Linux AppImage
+        uses: actions/upload-artifact@v3
+        with:
+          name: linux-appimage
+          path: desktop/dist/*.AppImage
+          retention-days: 30
+      
+      - name: Upload Linux .deb
+        uses: actions/upload-artifact@v3
+        with:
+          name: linux-deb
+          path: desktop/dist/*.deb
+          retention-days: 30
+  
+  # ======================
+  # ANDROID APK
+  # ======================
+  build-android-apk:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+      
+      - name: Install workspace dependencies
+        run: npm install --workspaces --legacy-peer-deps
+      
+      - name: Install web dependencies
+        working-directory: ./web
+        run: npm install --legacy-peer-deps
+      
+      - name: Install Capacitor
+        working-directory: ./web
+        run: npm install @capacitor/core @capacitor/cli @capacitor/android --save --legacy-peer-deps
+      
+      - name: Build web app
+        working-directory: ./web
+        run: npm run build
+      
+      - name: Initialize Capacitor
+        working-directory: ./web
+        run: npx cap init "OpenPilot" "com.openpilot.app" --web-dir=build
+      
+      - name: Add Android platform
+        working-directory: ./web
+        run: npx cap add android
+      
+      - name: Sync Capacitor
+        working-directory: ./web
+        run: npx cap sync
+      
+      - name: Build unsigned APK
+        working-directory: ./web/android
+        run: ./gradlew assembleRelease
+      
+      - name: Upload unsigned APK
+        uses: actions/upload-artifact@v3
+        with:
+          name: android-apk
+          path: web/android/app/build/outputs/apk/release/*.apk
+          retention-days: 30
+  
+  # ======================
+  # VSCODE EXTENSION
+  # ======================
+  build-vscode-extension:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install workspace dependencies
+        run: npm install --workspaces --legacy-peer-deps
+      
+      - name: Install VSCode extension dependencies
+        working-directory: ./vscode-extension
+        run: npm install --legacy-peer-deps
+      
+      - name: Build core library
+        working-directory: ./core
+        run: npm run build
+      
+      - name: Compile VSCode extension
+        working-directory: ./vscode-extension
+        run: npm run compile
+      
+      - name: Package VSCode extension
+        working-directory: ./vscode-extension
+        run: |
+          npm install -g @vscode/vsce
+          vsce package --no-dependencies
+      
+      - name: Upload VSCode extension
+        uses: actions/upload-artifact@v3
+        with:
+          name: vscode-extension
+          path: vscode-extension/*.vsix
+          retention-days: 30
+  
+  # ======================
+  # WEB APP
+  # ======================
+  build-web-app:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install workspace dependencies
+        run: npm install --workspaces --legacy-peer-deps
+      
+      - name: Install web dependencies
+        working-directory: ./web
+        run: npm install --legacy-peer-deps
+      
+      - name: Build web app
+        working-directory: ./web
+        run: npm run build
+      
+      - name: Create web app archive
+        working-directory: ./web
+        run: |
+          cd build
+          zip -r ../openpilot-web-${{ github.ref_name }}.zip .
+      
+      - name: Upload web app
+        uses: actions/upload-artifact@v3
+        with:
+          name: web-app
+          path: web/openpilot-web-*.zip
+          retention-days: 30
+  
+  # ======================
+  # TESTS WITH COVERAGE
+  # ======================
+  test-with-coverage:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install workspace dependencies
+        run: npm install --workspaces --legacy-peer-deps
+      
+      - name: Install core dependencies
+        working-directory: ./core
+        run: npm install --legacy-peer-deps
+      
+      - name: Install test dependencies
+        working-directory: ./tests
+        run: npm install --legacy-peer-deps
+      
+      - name: Run tests with coverage
+        working-directory: ./tests
+        run: npm test -- --coverage --collectCoverageFrom='../core/src/**/*.ts'
+      
+      - name: Upload coverage reports
+        uses: actions/upload-artifact@v3
+        with:
+          name: coverage-reports
+          path: tests/coverage/
+          retention-days: 30
+      
+      - name: Display coverage summary
+        working-directory: ./tests
+        run: |
+          echo "## Test Coverage Summary" >> $GITHUB_STEP_SUMMARY
+          cat coverage/lcov-report/index.html | grep -A 5 "coverage" || true
+  
+  # ======================
+  # CREATE RELEASE
+  # ======================
+  create-release:
+    needs: [
+      build-windows-installer,
+      build-linux-packages,
+      build-android-apk,
+      build-vscode-extension,
+      build-web-app,
+      test-with-coverage
+    ]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Download all artifacts
+        uses: actions/download-artifact@v3
+        with:
+          path: release-artifacts
+      
+      - name: Display artifacts
+        run: |
+          echo "## Release Artifacts" >> $GITHUB_STEP_SUMMARY
+          find release-artifacts -type f -exec ls -lh {} \; >> $GITHUB_STEP_SUMMARY
+      
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            release-artifacts/windows-installer/*.exe
+            release-artifacts/linux-appimage/*.AppImage
+            release-artifacts/linux-deb/*.deb
+            release-artifacts/android-apk/*.apk
+            release-artifacts/vscode-extension/*.vsix
+            release-artifacts/web-app/*.zip
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  
+  # ======================
+  # BUILD SUMMARY
+  # ======================
+  build-summary:
+    needs: [
+      build-windows-installer,
+      build-linux-packages,
+      build-android-apk,
+      build-vscode-extension,
+      build-web-app,
+      test-with-coverage
+    ]
+    runs-on: ubuntu-latest
+    if: always()
+    
+    steps:
+      - name: Generate summary
+        run: |
+          echo "# 🚀 OpenPilot Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Build Status" >> $GITHUB_STEP_SUMMARY
+          echo "- Windows Installer: ${{ needs.build-windows-installer.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Linux Packages: ${{ needs.build-linux-packages.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Android APK: ${{ needs.build-android-apk.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- VSCode Extension: ${{ needs.build-vscode-extension.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Web App: ${{ needs.build-web-app.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Tests: ${{ needs.test-with-coverage.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Artifacts" >> $GITHUB_STEP_SUMMARY
+          echo "All build artifacts are available in the Actions artifacts." >> $GITHUB_STEP_SUMMARY
