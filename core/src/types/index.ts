@@ -7,6 +7,7 @@ export enum AIProvider {
   GROK = 'grok',
   TOGETHER = 'together',
   HUGGINGFACE = 'huggingface',
+  GEMINI = 'gemini',
   CUSTOM = 'custom',
 }
 

@@ -5,13 +5,27 @@ import { getNonce } from '../utils/webview';
 
 export class ChatViewProvider implements vscode.WebviewViewProvider {
   private _view?: vscode.WebviewView;
+  private sessionPreferences: {
+    mode: 'agent' | 'chat';
+    provider: string;
+    model: string;
+    temperature: number;
+  };
 
   constructor(
     private readonly _extensionUri: vscode.Uri,
     private aiEngine: AIEngine,
     private contextManager: ContextManager,
     private sessionManager: SessionManager
-  ) {}
+  ) {
+    // initialize defaults; attempt to read previous session from global state later via messages
+    this.sessionPreferences = {
+      mode: 'agent',
+      provider: 'ollama',
+      model: 'codellama',
+      temperature: 0.7,
+    };
+  }
 
   public resolveWebviewView(
     webviewView: vscode.WebviewView,
@@ -25,7 +39,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
       localResourceRoots: [this._extensionUri],
     };
 
-    webviewView.webview.html = this._getHtmlForWebview(webviewView.webview);
+  webviewView.webview.html = this._getHtmlForWebview(webviewView.webview);
 
     // Handle messages from webview
     webviewView.webview.onDidReceiveMessage(async (data) => {
@@ -36,6 +50,30 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         case 'clearChat':
           this.sessionManager.clearCurrentSession();
           break;
+        case 'updateConfig': {
+          const { provider, model, temperature, mode } = data.payload || {};
+          // update local state
+          this.sessionPreferences = {
+            mode: mode === 'chat' ? 'chat' : 'agent',
+            provider: provider || this.sessionPreferences.provider,
+            model: model || this.sessionPreferences.model,
+            temperature: typeof temperature === 'number' ? temperature : this.sessionPreferences.temperature,
+          };
+          // propagate to engine (only supported fields)
+          this.aiEngine.updateConfig({
+            provider: (provider || this.sessionPreferences.provider) as any,
+            model: model || this.sessionPreferences.model,
+            temperature: this.sessionPreferences.temperature,
+            maxTokens: 2048,
+          } as any);
+          // echo back to webview to confirm
+          this._view?.webview.postMessage({ type: 'configUpdated', config: this.sessionPreferences });
+          break;
+        }
+        case 'requestConfig': {
+          this._view?.webview.postMessage({ type: 'loadConfig', config: this.sessionPreferences });
+          break;
+        }
       }
     });
 
@@ -170,6 +208,25 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
       flex-direction: column;
       height: 100vh;
     }
+    #toolbar {
+      display: flex;
+      gap: 8px;
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--vscode-editor-inactiveSelectionBackground);
+      align-items: center;
+    }
+    #toolbar select, #toolbar input[type=range] {
+      background: var(--vscode-input-background);
+      color: var(--vscode-foreground);
+      border: 1px solid var(--vscode-input-border, transparent);
+      padding: 4px 6px;
+      border-radius: 4px;
+    }
+    #toolbar label {
+      font-size: 12px;
+      opacity: 0.8;
+      margin-right: 4px;
+    }
     #messages {
       flex: 1;
       overflow-y: auto;
@@ -188,6 +245,34 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
       background-color: var(--vscode-editor-inactiveSelectionBackground);
       margin-right: 20px;
     }
+          <div id="toolbar">
+            <label for="mode">Mode</label>
+            <select id="mode">
+              <option value="agent">Agent</option>
+              <option value="chat">Chat</option>
+            </select>
+            <label for="provider">Provider</label>
+            <select id="provider">
+              <option value="ollama">Ollama</option>
+              <option value="openai">OpenAI</option>
+              <option value="grok">Grok (xAI)</option>
+              <option value="together">Together</option>
+              <option value="huggingface">HuggingFace</option>
+              <option value="custom">Custom</option>
+            </select>
+            <label for="model">Model</label>
+            <select id="model">
+              <option value="codellama">CodeLlama</option>
+              <option value="gpt-4o">GPT-4o</option>
+              <option value="gpt-4.1">GPT-4.1</option>
+              <option value="claude-3-5-sonnet">Claude 3.5 Sonnet</option>
+              <option value="grok-beta">Grok</option>
+              <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
+            </select>
+            <label for="temperature">Temp</label>
+            <input type="range" id="temperature" min="0" max="2" step="0.1" value="0.7" />
+            <span id="tempVal">0.7</span>
+          </div>
     .message-role {
       font-weight: bold;
       margin-bottom: 5px;
@@ -201,6 +286,11 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
     .message-content code {
       background-color: var(--vscode-textCodeBlock-background);
       padding: 2px 4px;
+          const modeEl = document.getElementById('mode');
+          const providerEl = document.getElementById('provider');
+          const modelEl = document.getElementById('model');
+          const tempEl = document.getElementById('temperature');
+          const tempValEl = document.getElementById('tempVal');
       border-radius: 3px;
     }
     .message-content pre {
@@ -223,6 +313,18 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
       padding: 10px;
       border-top: 1px solid var(--vscode-panel-border);
       background-color: var(--vscode-editor-background);
+              case 'loadConfig':
+                if (msg.config) {
+                  modeEl.value = msg.config.mode || 'agent';
+                  providerEl.value = msg.config.provider || 'ollama';
+                  modelEl.value = msg.config.model || 'codellama';
+                  tempEl.value = (msg.config.temperature ?? 0.7);
+                  tempValEl.textContent = String(msg.config.temperature ?? 0.7);
+                }
+                break;
+              case 'configUpdated':
+                // could show a toast/hint in UI
+                break;
     }
     #message-input {
       flex: 1;
@@ -240,6 +342,26 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
       background-color: var(--vscode-button-background);
       color: var(--vscode-button-foreground);
       border: none;
+
+          function pushConfig() {
+            const payload = {
+              mode: modeEl.value,
+              provider: providerEl.value,
+              model: modelEl.value,
+              temperature: Number(tempEl.value)
+            };
+            vscode.postMessage({ type: 'updateConfig', payload });
+          }
+          modeEl.addEventListener('change', pushConfig);
+          providerEl.addEventListener('change', pushConfig);
+          modelEl.addEventListener('change', pushConfig);
+          tempEl.addEventListener('input', () => {
+            tempValEl.textContent = tempEl.value;
+          });
+          tempEl.addEventListener('change', pushConfig);
+
+          // fetch initial config from extension
+          vscode.postMessage({ type: 'requestConfig' });
       border-radius: 3px;
       cursor: pointer;
     }
