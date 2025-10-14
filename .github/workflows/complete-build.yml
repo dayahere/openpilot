@@ -32,6 +32,11 @@ jobs:
       - name: Install workspace dependencies
         run: npm install --workspaces --legacy-peer-deps
       
+        # Avoid workspace install to prevent symlinked dependencies
+        - name: Install core dependencies
+          working-directory: ./core
+          run: |
+            npm ci --omit=dev --legacy-peer-deps || npm install --production --legacy-peer-deps
       - name: Install desktop dependencies
         working-directory: ./desktop
         run: npm install --legacy-peer-deps
@@ -174,45 +179,35 @@ jobs:
           node-version: '20'
           cache: 'npm'
       
-      - name: Install workspace dependencies
-        run: npm install --workspaces --legacy-peer-deps
-      
-      - name: Install VSCode extension dependencies
-        working-directory: ./vscode-extension
+      - name: Install core dependencies
+        working-directory: ./core
         run: |
           npm ci --omit=dev --legacy-peer-deps || npm install --production --legacy-peer-deps
-          # Remove @openpilot/core that npm may try to resolve from registry
-          rm -rf node_modules/@openpilot/core || true
       
       - name: Build core library
         working-directory: ./core
         run: npm run build
+
+      - name: Pack core as tarball
+        working-directory: ./core
+        run: echo "TARBALL=$(npm pack --silent)" >> $GITHUB_ENV
+
+      - name: Copy core tarball into extension
+        run: cp core/${{ env.TARBALL }} vscode-extension/
       
       - name: Compile VSCode extension
         working-directory: ./vscode-extension
         run: npm run compile
-      
-      - name: Remove file dependency and copy core dist
+
+      - name: Install VSCode extension dependencies (prod only)
         working-directory: ./vscode-extension
         run: |
-          # Remove the entire @openpilot/core symlinked package
-          rm -rf node_modules/@openpilot || true
-          
-          # Create a clean @openpilot/core package with only dist files
-          mkdir -p node_modules/@openpilot/core
-          cp -r ../core/dist node_modules/@openpilot/core/
-          # Create a minimal package.json for the copied core (avoid deps)
-          cat > node_modules/@openpilot/core/package.json << 'EOF'
-          {
-            "name": "@openpilot/core",
-            "version": "1.0.0",
-            "main": "dist/index.js",
-            "types": "dist/index.d.ts"
-          }
-          EOF
-          
-          # Verify structure
-          ls -la node_modules/@openpilot/core/
+          rm -f package-lock.json || true
+          rm -rf node_modules || true
+          # Install the packed core first to satisfy package.json
+          npm install --production --legacy-peer-deps "./${{ env.TARBALL }}"
+          # Install remaining production dependencies
+          npm install --production --legacy-peer-deps
       
       - name: Package VSCode extension
         working-directory: ./vscode-extension
