@@ -23,5 +23,7 @@
                     "src/**/*.test.ts",
                     "src/__tests__/integration/**",
                     "src/__tests__/e2e/**"
+                    ,
+                    "src/__mocks__/**"
                 ]
 }

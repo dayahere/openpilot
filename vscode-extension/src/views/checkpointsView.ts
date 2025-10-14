@@ -15,7 +15,7 @@ export class CheckpointsViewProvider implements vscode.TreeDataProvider<Checkpoi
     return element;
   }
 
-  getChildren(): Thenable<CheckpointItem[]> {
+  getChildren(): Promise<CheckpointItem[]> {
     const checkpoints = this.checkpointManager.getCheckpoints();
     return Promise.resolve(
       checkpoints.map(
@@ -31,12 +31,15 @@ export class CheckpointsViewProvider implements vscode.TreeDataProvider<Checkpoi
 }
 
 class CheckpointItem extends vscode.TreeItem {
+  public contextValue: string;
+
   constructor(
     public readonly label: string,
-    public readonly tooltip: string,
+    tooltipText: string,
     public readonly checkpointId: string
   ) {
     super(label, vscode.TreeItemCollapsibleState.None);
+    this.tooltip = tooltipText;
     this.contextValue = 'checkpoint';
   }
 }

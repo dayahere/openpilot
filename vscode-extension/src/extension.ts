@@ -35,7 +35,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
   // Watch for configuration changes
   context.subscriptions.push(
-    vscode.workspace.onDidChangeConfiguration((e) => {
+    vscode.workspace.onDidChangeConfiguration((e: vscode.ConfigurationChangeEvent) => {
       if (e.affectsConfiguration('openpilot')) {
         const newConfig = configManager.getAIConfig();
         aiEngine.updateConfig(newConfig);
@@ -80,16 +80,6 @@ export async function activate(context: vscode.ExtensionContext) {
 
   // Register commands
   registerCommands(context, chatViewProvider);
-
-  // Listen for configuration changes
-  context.subscriptions.push(
-    vscode.workspace.onDidChangeConfiguration((e) => {
-      if (e.affectsConfiguration('openpilot')) {
-        const newConfig = configManager.getAIConfig();
-        aiEngine.updateConfig(newConfig);
-      }
-    })
-  );
 
   // Analyze repository on startup
   if (contextManager) {

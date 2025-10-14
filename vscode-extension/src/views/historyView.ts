@@ -15,7 +15,7 @@ export class HistoryViewProvider implements vscode.TreeDataProvider<HistoryItem>
     return element;
   }
 
-  getChildren(element?: HistoryItem): Thenable<HistoryItem[]> {
+  getChildren(element?: HistoryItem): Promise<HistoryItem[]> {
     if (!element) {
       const sessions = this.sessionManager.getSessions();
       return Promise.resolve(
@@ -35,6 +35,8 @@ export class HistoryViewProvider implements vscode.TreeDataProvider<HistoryItem>
 }
 
 class HistoryItem extends vscode.TreeItem {
+  public tooltip: string;
+
   constructor(
     public readonly label: string,
     public readonly collapsibleState: vscode.TreeItemCollapsibleState,
