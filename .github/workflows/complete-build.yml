@@ -31,12 +31,6 @@ jobs:
       
       - name: Install workspace dependencies
         run: npm install --workspaces --legacy-peer-deps
-      
-        # Avoid workspace install to prevent symlinked dependencies
-        - name: Install core dependencies
-          working-directory: ./core
-          run: |
-            npm ci --omit=dev --legacy-peer-deps || npm install --production --legacy-peer-deps
       - name: Install desktop dependencies
         working-directory: ./desktop
         run: npm install --legacy-peer-deps
@@ -73,9 +67,7 @@ jobs:
           node-version: '20'
           cache: 'npm'
       
-      - name: Install workspace dependencies
-        run: npm install --workspaces --legacy-peer-deps
-      
+      # Avoid workspace install here to prevent cross-workspace linking
       - name: Install desktop dependencies
         working-directory: ./desktop
         run: npm install --legacy-peer-deps
@@ -193,8 +185,15 @@ jobs:
         run: echo "TARBALL=$(npm pack --silent)" >> $GITHUB_ENV
 
       - name: Copy core tarball into extension
-        run: cp core/${{ env.TARBALL }} vscode-extension/
+        run: cp core/$TARBALL vscode-extension/
       
+      - name: Install VSCode extension dev dependencies (only)
+        working-directory: ./vscode-extension
+        run: |
+          rm -f package-lock.json || true
+          rm -rf node_modules || true
+          npm install --only=dev --legacy-peer-deps
+
       - name: Compile VSCode extension
         working-directory: ./vscode-extension
         run: npm run compile
@@ -202,10 +201,10 @@ jobs:
       - name: Install VSCode extension dependencies (prod only)
         working-directory: ./vscode-extension
         run: |
-          rm -f package-lock.json || true
+          # Remove dev-only modules, keep a clean prod tree
           rm -rf node_modules || true
           # Install the packed core first to satisfy package.json
-          npm install --production --legacy-peer-deps "./${{ env.TARBALL }}"
+          npm install --production --legacy-peer-deps "./$TARBALL"
           # Install remaining production dependencies
           npm install --production --legacy-peer-deps
       
