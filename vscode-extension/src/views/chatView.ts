@@ -11,13 +11,16 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
     model: string;
     temperature: number;
   };
+  private ctx: vscode.ExtensionContext;
 
   constructor(
+    context: vscode.ExtensionContext,
     private readonly _extensionUri: vscode.Uri,
     private aiEngine: AIEngine,
     private contextManager: ContextManager,
     private sessionManager: SessionManager
   ) {
+    this.ctx = context;
     // initialize defaults; attempt to read previous session from global state later via messages
     this.sessionPreferences = {
       mode: 'agent',
@@ -25,6 +28,16 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
       model: 'codellama',
       temperature: 0.7,
     };
+
+    const saved = this.ctx.globalState.get<any>('openpilot.preferences');
+    if (saved) {
+      this.sessionPreferences = {
+        mode: saved.mode === 'chat' ? 'chat' : 'agent',
+        provider: saved.provider || this.sessionPreferences.provider,
+        model: saved.model || this.sessionPreferences.model,
+        temperature: typeof saved.temperature === 'number' ? saved.temperature : this.sessionPreferences.temperature,
+      };
+    }
   }
 
   public resolveWebviewView(
@@ -66,6 +79,8 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
             temperature: this.sessionPreferences.temperature,
             maxTokens: 2048,
           } as any);
+          // persist
+          await this.ctx.globalState.update('openpilot.preferences', this.sessionPreferences);
           // echo back to webview to confirm
           this._view?.webview.postMessage({ type: 'configUpdated', config: this.sessionPreferences });
           break;

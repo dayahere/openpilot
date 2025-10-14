@@ -47,6 +47,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
   // Register views
   const chatViewProvider = new ChatViewProvider(
+    context,
     context.extensionUri,
     aiEngine,
     contextManager,
