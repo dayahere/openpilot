@@ -54,12 +54,13 @@ describe('Provider stubs', () => {
         })
       );
       expect(mockedAxios.post).toHaveBeenCalledWith(
-        expect.stringContaining('/api/chat'),
+        '/api/chat',
         expect.objectContaining({
           model: 'codellama',
           messages: expect.any(Array),
-        }),
-        expect.any(Object)
+          stream: false,
+          options: expect.any(Object),
+        })
       );
     });
 
@@ -75,14 +76,29 @@ describe('Provider stubs', () => {
     });
 
     it('streamChat - happy path with chunks', async () => {
-      const mockResponse = {
-        data: {
-          message: { content: 'Hello World!' },
-          model: 'codellama',
-        },
+      // Mock stream response
+      const mockEventEmitter: any = {
+        on: jest.fn((event: string, handler: any): any => {
+          if (event === 'data') {
+            // Simulate streaming chunks
+            setTimeout(() => {
+              handler(Buffer.from(JSON.stringify({ message: { content: 'Hello' } }) + '\n'));
+              handler(Buffer.from(JSON.stringify({ message: { content: ' World' } }) + '\n'));
+              handler(Buffer.from(JSON.stringify({ message: { content: '!' }, done: true }) + '\n'));
+            }, 0);
+          } else if (event === 'end') {
+            setTimeout(() => handler(), 10);
+          } else if (event === 'error') {
+            // No error in happy path
+          }
+          return mockEventEmitter;
+        }),
       };
 
-      mockedAxios.post.mockResolvedValueOnce(mockResponse);
+      mockedAxios.post.mockResolvedValueOnce({
+        data: mockEventEmitter,
+        status: 200,
+      } as any);
 
       const receivedChunks: string[] = [];
       const result = await provider.streamChat(
@@ -94,6 +110,7 @@ describe('Provider stubs', () => {
         }
       );
 
+      expect(receivedChunks.length).toBeGreaterThan(0);
       expect(result).toEqual(
         expect.objectContaining({
           role: 'assistant',

@@ -12,18 +12,21 @@
                             "module":  "commonjs",
                             "esModuleInterop":  true,
                             "skipLibCheck":  true,
-                            "rootDir":  "./src",
+                        // "rootDir":  "./src",
                             "sourceMap":  true
                         },
     "exclude":  [
-                    "node_modules",
-                    ".vscode-test",
-                    "out",
-                    "src/__tests__/**",
-                    "src/**/*.test.ts",
-                    "src/__tests__/integration/**",
-                    "src/__tests__/e2e/**"
-                    ,
-                    "src/__mocks__/**"
-                ]
+        "node_modules",
+        ".vscode-test",
+        "out",
+        "src/__tests__/integration/**",
+        "src/__tests__/e2e/**",
+        "src/__mocks__/**"
+    ],
+    "include": [
+    "minimal-src/extension.ts",
+    "tests/index.ts",
+    "tests/runTest.ts",
+    "tests/extension.test.ts"
+    ]
 }

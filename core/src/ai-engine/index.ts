@@ -381,16 +381,47 @@ export class AIEngine {
 
   private createProvider(config: AIConfig): BaseAIProvider {
     switch (config.provider) {
+      // Local/Self-hosted providers
       case AIProvider.OLLAMA:
         return new OllamaProvider(config);
+      case AIProvider.LOCALAI:
+      case AIProvider.LLAMACPP:
+      case AIProvider.TEXTGEN_WEBUI:
+      case AIProvider.VLLM:
+        // These use OpenAI-compatible API
+        return new OpenAIProvider({
+          ...config,
+          apiUrl: config.apiUrl || this.getDefaultApiUrl(config.provider),
+        });
+      
+      // Cloud providers (OpenAI-compatible)
       case AIProvider.OPENAI:
-      case AIProvider.GROK:
-      case AIProvider.TOGETHER:
+      case AIProvider.ANTHROPIC:     // Claude via OpenAI-compatible endpoint
+      case AIProvider.GROK:           // xAI Grok
+      case AIProvider.TOGETHER:       // Together AI
+      case AIProvider.GROQ:           // Groq fast inference
+      case AIProvider.MISTRAL:        // Mistral AI
+      case AIProvider.COHERE:         // Cohere
+      case AIProvider.PERPLEXITY:     // Perplexity AI
+      case AIProvider.DEEPSEEK:       // DeepSeek
+      case AIProvider.GEMINI:         // Google Gemini
+      case AIProvider.HUGGINGFACE:    // HuggingFace Inference
       case AIProvider.CUSTOM:
         return new OpenAIProvider(config);
+      
       default:
         throw new Error(`Unsupported AI provider: ${config.provider}`);
     }
+  }
+
+  private getDefaultApiUrl(provider: AIProvider): string {
+    const defaults: Record<string, string> = {
+      [AIProvider.LOCALAI]: 'http://localhost:8080',
+      [AIProvider.LLAMACPP]: 'http://localhost:8080',
+      [AIProvider.TEXTGEN_WEBUI]: 'http://localhost:5000',
+      [AIProvider.VLLM]: 'http://localhost:8000',
+    };
+    return defaults[provider] || 'http://localhost:8080';
   }
 
   async chat(context: ChatContext): Promise<AIResponse> {

@@ -1,13 +1,18 @@
 # Dependencies
-node_modules/
+**/node_modules/
+**/*node_modules*
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+package-lock.json
+# Allow tarballs for extension tests
+# *.tgz
 
 # Build outputs
-dist/
-build/
-out/
+**/dist/
+**/build/
+# Allow out directory for extension tests
+# **/out/
 .next/
 *.tsbuildinfo
 

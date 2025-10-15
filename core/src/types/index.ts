@@ -4,10 +4,20 @@ import { z } from 'zod';
 export enum AIProvider {
   OLLAMA = 'ollama',
   OPENAI = 'openai',
+  ANTHROPIC = 'anthropic',      // Claude models
   GROK = 'grok',
   TOGETHER = 'together',
   HUGGINGFACE = 'huggingface',
   GEMINI = 'gemini',
+  GROQ = 'groq',                 // Fast inference
+  MISTRAL = 'mistral',           // Mistral AI
+  COHERE = 'cohere',             // Cohere API
+  PERPLEXITY = 'perplexity',     // Perplexity AI
+  DEEPSEEK = 'deepseek',         // DeepSeek models
+  LOCALAI = 'localai',           // LocalAI server
+  LLAMACPP = 'llamacpp',         // llama.cpp server
+  TEXTGEN_WEBUI = 'textgen-webui', // text-generation-webui/oobabooga
+  VLLM = 'vllm',                 // vLLM server
   CUSTOM = 'custom',
 }
 

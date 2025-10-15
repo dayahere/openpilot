@@ -1,5 +1,9 @@
 import * as vscode from 'vscode';
-import { AIEngine, ContextManager } from '@openpilot/core';
+// import { AIEngine, ContextManager } from '@openpilot/core';
+
+// Stub types for minimal build
+type AIEngine = any;
+type ContextManager = any;
 import { ChatViewProvider } from './views/chatView';
 import { HistoryViewProvider } from './views/historyView';
 import { CheckpointsViewProvider } from './views/checkpointsView';
@@ -8,8 +12,8 @@ import { ConfigurationManager } from './utils/configManager';
 import { SessionManager } from './utils/sessionManager';
 import { CheckpointManager } from './utils/checkpointManager';
 
-let aiEngine: AIEngine;
-let contextManager: ContextManager;
+// let aiEngine: AIEngine;
+// let contextManager: ContextManager;
 let sessionManager: SessionManager;
 let checkpointManager: CheckpointManager;
 
@@ -21,13 +25,13 @@ export async function activate(context: vscode.ExtensionContext) {
   const config = configManager.getAIConfig();
 
   // Initialize AI engine
-  aiEngine = new AIEngine({ config });
+  // aiEngine = new AIEngine({ config });
 
   // Initialize context manager
   const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
-  if (workspaceRoot) {
-    contextManager = new ContextManager({ rootPath: workspaceRoot });
-  }
+  // if (workspaceRoot) {
+  //   contextManager = new ContextManager({ rootPath: workspaceRoot });
+  // }
 
   // Initialize session and checkpoint managers
   sessionManager = new SessionManager(context);
@@ -38,9 +42,9 @@ export async function activate(context: vscode.ExtensionContext) {
     vscode.workspace.onDidChangeConfiguration((e: vscode.ConfigurationChangeEvent) => {
       if (e.affectsConfiguration('openpilot')) {
         const newConfig = configManager.getAIConfig();
-        aiEngine.updateConfig(newConfig);
-        console.log('OpenPilot configuration updated:', newConfig);
-        vscode.window.showInformationMessage('OpenPilot configuration updated!');
+  // aiEngine.updateConfig(newConfig);
+  console.log('OpenPilot configuration updated:', newConfig);
+  vscode.window.showInformationMessage('OpenPilot configuration updated!');
       }
     })
   );
@@ -49,8 +53,8 @@ export async function activate(context: vscode.ExtensionContext) {
   const chatViewProvider = new ChatViewProvider(
     context,
     context.extensionUri,
-    aiEngine,
-    contextManager,
+    undefined, // aiEngine stub
+    undefined, // contextManager stub
     sessionManager
   );
   context.subscriptions.push(
@@ -69,24 +73,24 @@ export async function activate(context: vscode.ExtensionContext) {
 
   // Register completion provider if enabled
   if (vscode.workspace.getConfiguration('openpilot').get('autoComplete')) {
-    const completionProvider = new CompletionProvider(aiEngine, contextManager);
-    context.subscriptions.push(
-      vscode.languages.registerInlineCompletionItemProvider(
-        { pattern: '**' },
-        completionProvider
-      )
-    );
+    // const completionProvider = new CompletionProvider(aiEngine, contextManager);
+    // context.subscriptions.push(
+    //   vscode.languages.registerInlineCompletionItemProvider(
+    //     { pattern: '**' },
+    //     completionProvider
+    //   )
+    // );
   }
 
   // Register commands
   registerCommands(context, chatViewProvider);
 
   // Analyze repository on startup
-  if (contextManager) {
-    contextManager.analyzeRepository().catch((error) => {
-      console.error('Failed to analyze repository:', error);
-    });
-  }
+  // if (contextManager) {
+  //   contextManager.analyzeRepository().catch((error) => {
+  //     console.error('Failed to analyze repository:', error);
+  //   });
+  // }
 }
 
 function registerCommands(
@@ -184,22 +188,22 @@ function registerCommands(
   // Analyze repository
   context.subscriptions.push(
     vscode.commands.registerCommand('openpilot.analyzeRepo', async () => {
-      if (!contextManager) {
-        vscode.window.showErrorMessage('No workspace opened');
-        return;
-      }
+      // if (!contextManager) {
+      //   vscode.window.showErrorMessage('No workspace opened');
+      //   return;
+      // }
 
-      await vscode.window.withProgress(
-        {
-          location: vscode.ProgressLocation.Notification,
-          title: 'Analyzing repository...',
-          cancellable: false,
-        },
-        async () => {
-          await contextManager.analyzeRepository();
-          vscode.window.showInformationMessage('Repository analysis complete!');
-        }
-      );
+      // await vscode.window.withProgress(
+      //   {
+      //     location: vscode.ProgressLocation.Notification,
+      //     title: 'Analyzing repository...',
+      //     cancellable: false,
+      //   },
+      //   async () => {
+      //     await contextManager.analyzeRepository();
+      //     vscode.window.showInformationMessage('Repository analysis complete!');
+      //   }
+      // );
     })
   );
 

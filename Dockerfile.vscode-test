@@ -1,0 +1,149 @@
+# OpenPilot VSCode Extension Test Environment
+# Based on Debian for full GUI and VSCode dependencies, minimal size
+
+# ---------- Builder Stage ----------
+FROM node:20-bullseye-slim AS builder
+WORKDIR /workspace
+RUN apt-get update && apt-get install -y curl ca-certificates && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Install only essential build dependencies (no test deps)
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates libx11-xcb1 libxkbfile1 libsecret-1-0 libgtk-3-0 libasound2 libnss3 libxss1 libxtst6 libxrandr2 libgbm1 libxdamage1 libxcomposite1 libxext6 libxfixes3 libxi6 libgl1-mesa-glx libglib2.0-0 libsm6 libice6 libfontconfig1 libcurl4 fonts-liberation && npm install -g typescript jest react-scripts && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Copy only package files for dependency cache
+COPY vscode-extension/package.json ./package.json
+COPY vscode-extension/package-lock.json ./package-lock.json
+COPY openpilot-core-1.0.0.tgz ./openpilot-core-1.0.0.tgz
+
+# Install dependencies (cache layer)
+RUN npm ci --legacy-peer-deps --prefer-offline --no-audit --progress=false
+
+COPY vscode-extension/tsconfig.json ./tsconfig.json
+COPY vscode-extension/.vscodeignore ./.vscodeignore
+COPY vscode-extension/resources ./resources
+COPY vscode-extension/minimal-src ./minimal-src
+COPY vscode-extension/tests ./tests
+
+# Now run TypeScript build
+RUN npx tsc --project ./tsconfig.json
+
+# Build output only
+RUN npm install --save-dev @types/mocha @types/glob && rm -rf ./out && npm run compile --if-present
+
+# ---------- Test Stage ----------
+FROM ubuntu:22.04 AS test
+WORKDIR /workspace
+# Step 1: Install curl and ca-certificates
+RUN apt-get update && apt-get install -y curl ca-certificates && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Step 2: Install Node.js 20.x LTS and npm
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
+	apt-get update && apt-get install -y nodejs && \
+	apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Step 3: Install all other system dependencies (excluding nodejs/npm/curl/ca-certificates)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+	libgbm1 \
+	dbus \
+	xvfb \
+	xauth \
+	x11-utils \
+	libxshmfence1 \
+	libxrender1 \
+	libxv1 \
+	libxinerama1 \
+	libxcursor1 \
+	libxpm4 \
+	libxft2 \
+	libxmu6 \
+	libxaw7 \
+	libxkbcommon0 \
+	libxkbcommon-x11-0 \
+	libxkbfile1 \
+	libxss1 \
+	libxtst6 \
+	libnss3 \
+	libatk-bridge2.0-0 \
+	libgtk-3-0 \
+	libxcomposite1 \
+	libxdamage1 \
+	libxrandr2 \
+	libasound2 \
+	libxext6 \
+	libxfixes3 \
+	libxi6 \
+	libgl1-mesa-glx \
+	libglib2.0-0 \
+	libsm6 \
+	libice6 \
+	libfontconfig1 \
+	fonts-liberation \
+	wget \
+	git \
+	build-essential \
+	python3 \
+	&& apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Step 4: Install global TypeScript and legacy VS Code test runner
+RUN npm install -g typescript jest react-scripts @vscode/test-electron@latest
+RUN apt-get update && apt-get install -y --no-install-recommends \
+	libgbm1 \
+	dbus \
+	xvfb \
+	xauth \
+	x11-utils \
+	libxshmfence1 \
+	libxrender1 \
+	libxv1 \
+	libxinerama1 \
+	libxcursor1 \
+	libxpm4 \
+	libxft2 \
+	libxmu6 \
+	libxaw7 \
+	libxkbcommon0 \
+	libxkbcommon-x11-0 \
+	libxkbfile1 \
+	libxss1 \
+	libxtst6 \
+	libnss3 \
+	libatk-bridge2.0-0 \
+	libgtk-3-0 \
+	libxcomposite1 \
+	libxdamage1 \
+	libxrandr2 \
+	libasound2 \
+	libxext6 \
+	libxfixes3 \
+	libxi6 \
+	libgl1-mesa-glx \
+	libglib2.0-0 \
+	libsm6 \
+	libice6 \
+	libfontconfig1 \
+	fonts-liberation \
+	&& apt-get clean \
+	&& rm -rf /var/lib/apt/lists/*
+
+COPY --from=builder /workspace/package.json ./package.json
+COPY --from=builder /workspace/core /workspace/core
+COPY --from=builder /workspace/desktop /workspace/desktop
+COPY --from=builder /workspace/web /workspace/web
+COPY --from=builder /workspace/package-lock.json ./package-lock.json
+COPY --from=builder /workspace/openpilot-core-1.0.0.tgz ./openpilot-core-1.0.0.tgz
+COPY --from=builder /workspace/resources ./resources
+COPY --from=builder /workspace/out ./out
+COPY --from=builder /workspace/.vscodeignore ./.vscodeignore
+COPY --from=builder /workspace/tsconfig.json ./tsconfig.json
+COPY .vscode-test.json ./.vscode-test.json
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
+	apt-get update && apt-get install -y nodejs && \
+	npm install -g typescript jest react-scripts && \
+	apt-get clean && rm -rf /var/lib/apt/lists/*
+
+RUN npm ci --legacy-peer-deps --prefer-offline --no-audit --progress=false && npm install --save-dev mocha
+RUN cd core && npm install --legacy-peer-deps && npm install --save-dev typescript jest @jest/globals @types/uuid
+RUN cd desktop && npm install --legacy-peer-deps && npm install --save-dev react-scripts && npm install react-scripts --legacy-peer-deps
+RUN cd web && npm install --legacy-peer-deps && npm install --save-dev react-scripts && npm install react-scripts --legacy-peer-deps
+
+# Default command: run extension tests using legacy VS Code test runner under xvfb
+CMD ["bash", "-c", "timeout 300 xvfb-run -a node ./out/tests/runTest.js || (echo 'Test run timed out or failed'; exit 1)"]

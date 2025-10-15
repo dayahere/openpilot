@@ -32,6 +32,7 @@ export class CheckpointsViewProvider implements vscode.TreeDataProvider<Checkpoi
 
 class CheckpointItem extends vscode.TreeItem {
   public contextValue: string;
+  public tooltip: string;
 
   constructor(
     public readonly label: string,

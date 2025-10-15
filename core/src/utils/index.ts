@@ -104,17 +104,28 @@ export async function retryWithBackoff<T>(
   throw lastError!;
 }
 
-export function parseError(error: unknown): { message: string; stack?: string } {
+export function parseError(error: unknown): string {
   if (error instanceof Error) {
-    return {
-      message: error.message,
-      stack: error.stack,
-    };
+    return error.stack || error.message;
   }
 
-  return {
-    message: String(error),
-  };
+  if (typeof error === 'string') {
+    return error;
+  }
+
+  if (error === null || error === undefined) {
+    return 'Unknown error';
+  }
+
+  if (typeof error === 'object') {
+    try {
+      return JSON.stringify(error);
+    } catch {
+      return String(error);
+    }
+  }
+
+  return String(error);
 }
 
 export class Logger {

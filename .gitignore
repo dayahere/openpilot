@@ -48,6 +48,42 @@ htmlcov/
 *~
 .DS_Store
 
+# VSCode Extension Test Artifacts
+vscode-extension/.vscode-test/
+vscode-extension/.vscode-test/vscode-linux-x64-*/
+vscode-extension/.vscode-test/vscode-linux-x64-*/resources/app/extensions/
+vscode-extension/.vscode-test/vscode-linux-x64-*/resources/app/completions/
+vscode-extension/.vscode-test/vscode-linux-x64-*/resources/app/licenses/
+vscode-extension/.vscode-test/vscode-linux-x64-*/resources/app/node_modules/
+vscode-extension/.vscode-test/vscode-linux-x64-*/resources/app/node_modules.asar
+vscode-extension/.vscode-test/vscode-linux-x64-*/resources/app/node_modules.asar.unpacked/
+vscode-extension/.vscode-test/vscode-linux-x64-*/resources/app/out/
+vscode-extension/.vscode-test/vscode-linux-x64-*/resources/app/package.json
+vscode-extension/.vscode-test/vscode-linux-x64-*/resources/app/product.json
+vscode-extension/.vscode-test/vscode-linux-x64-*/resources/app/telemetry-core.json
+vscode-extension/.vscode-test/vscode-linux-x64-*/resources/app/telemetry-extensions.json
+vscode-extension/.vscode-test/vscode-linux-x64-*/resources/app/resources/
+vscode-extension/.vscode-test/vscode-linux-x64-*/resources/app/ThirdPartyNotices.txt
+vscode-extension/.vscode-test/vscode-linux-x64-*/resources/app/LICENSE.rtf
+vscode-extension/.vscode-test/vscode-linux-x64-*/resources/app/licenses/
+vscode-extension/.vscode-test/vscode-linux-x64-*/resources/app/pack*
+vscode-extension/.vscode-test/vscode-linux-x64-*/resources/app/v8_context_snapshot.bin
+vscode-extension/.vscode-test/vscode-linux-x64-*/resources/app/snapshot_blob.bin
+vscode-extension/.vscode-test/vscode-linux-x64-*/resources/app/locales/
+vscode-extension/.vscode-test/vscode-linux-x64-*/resources/app/bin/
+vscode-extension/.vscode-test/vscode-linux-x64-*/resources/app/chrome*
+vscode-extension/.vscode-test/vscode-linux-x64-*/resources/app/lib*
+vscode-extension/.vscode-test/vscode-linux-x64-*/resources/app/LICENSES.chromium.html
+vscode-extension/.vscode-test/vscode-linux-x64-*/resources/app/vk_swiftshader_icd.json
+vscode-extension/.vscode-test/vscode-linux-x64-*/resources/app/*.pak
+vscode-extension/.vscode-test/vscode-linux-x64-*/resources/app/*.so
+vscode-extension/.vscode-test/vscode-linux-x64-*/resources/app/*.dat
+vscode-extension/.vscode-test/vscode-linux-x64-*/resources/app/*.bin
+vscode-extension/.vscode-test/vscode-linux-x64-*/resources/app/*.json
+vscode-extension/.vscode-test/vscode-linux-x64-*/resources/app/*.svg
+vscode-extension/.vscode-test/vscode-linux-x64-*/resources/app/*.woff2
+vscode-extension/.vscode-test/vscode-linux-x64-*/resources/app/*.txt
+
 # Build outputs
 *.vsix
 out/

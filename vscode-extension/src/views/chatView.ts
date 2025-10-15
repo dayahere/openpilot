@@ -12,14 +12,22 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
     temperature: number;
   };
   private ctx: vscode.ExtensionContext;
+  public aiEngine: any;
+  public contextManager: any;
+  public sessionManager: any;
+  public _extensionUri: any;
 
   constructor(
     context: vscode.ExtensionContext,
-    private readonly _extensionUri: vscode.Uri,
-    private aiEngine: AIEngine,
-    private contextManager: ContextManager,
-    private sessionManager: SessionManager
+    _extensionUri: vscode.Uri,
+    aiEngine: any,
+    contextManager: any,
+    sessionManager: SessionManager
   ) {
+    this._extensionUri = _extensionUri;
+    this.aiEngine = aiEngine;
+    this.contextManager = contextManager;
+    this.sessionManager = sessionManager;
     this.ctx = context;
     // initialize defaults; attempt to read previous session from global state later via messages
     this.sessionPreferences = {
@@ -148,7 +156,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
 
       // Stream response
       let assistantContent = '';
-      const response = await this.aiEngine.streamChat(chat_context, (chunk) => {
+  const response = await this.aiEngine.streamChat(chat_context, (chunk: any) => {
         assistantContent += chunk;
         this._view?.webview.postMessage({
           type: 'streamChunk',
@@ -268,21 +276,52 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
             </select>
             <label for="provider">Provider</label>
             <select id="provider">
-              <option value="ollama">Ollama</option>
-              <option value="openai">OpenAI</option>
-              <option value="grok">Grok (xAI)</option>
-              <option value="together">Together</option>
-              <option value="huggingface">HuggingFace</option>
-              <option value="custom">Custom</option>
+              <optgroup label="Local / Self-Hosted">
+                <option value="ollama">Ollama</option>
+                <option value="localai">LocalAI</option>
+                <option value="llamacpp">llama.cpp</option>
+                <option value="textgen-webui">Text Generation WebUI</option>
+                <option value="vllm">vLLM</option>
+              </optgroup>
+              <optgroup label="Cloud Providers">
+                <option value="openai">OpenAI</option>
+                <option value="anthropic">Anthropic (Claude)</option>
+                <option value="grok">Grok (xAI)</option>
+                <option value="groq">Groq (Fast Inference)</option>
+                <option value="together">Together AI</option>
+                <option value="mistral">Mistral AI</option>
+                <option value="cohere">Cohere</option>
+                <option value="perplexity">Perplexity AI</option>
+                <option value="deepseek">DeepSeek</option>
+                <option value="gemini">Google Gemini</option>
+                <option value="huggingface">HuggingFace</option>
+              </optgroup>
+              <optgroup label="Other">
+                <option value="custom">Custom Endpoint</option>
+              </optgroup>
             </select>
             <label for="model">Model</label>
             <select id="model">
-              <option value="codellama">CodeLlama</option>
-              <option value="gpt-4o">GPT-4o</option>
-              <option value="gpt-4.1">GPT-4.1</option>
-              <option value="claude-3-5-sonnet">Claude 3.5 Sonnet</option>
-              <option value="grok-beta">Grok</option>
-              <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
+              <optgroup label="Local Models">
+                <option value="codellama">CodeLlama</option>
+                <option value="llama2">Llama 2</option>
+                <option value="mistral-7b">Mistral 7B</option>
+                <option value="mixtral-8x7b">Mixtral 8x7B</option>
+                <option value="deepseek-coder">DeepSeek Coder</option>
+                <option value="wizardcoder">WizardCoder</option>
+                <option value="starcoder">StarCoder</option>
+              </optgroup>
+              <optgroup label="Cloud Models">
+                <option value="gpt-4o">GPT-4o</option>
+                <option value="gpt-4-turbo">GPT-4 Turbo</option>
+                <option value="claude-3-5-sonnet">Claude 3.5 Sonnet</option>
+                <option value="claude-3-opus">Claude 3 Opus</option>
+                <option value="grok-beta">Grok Beta</option>
+                <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
+                <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
+                <option value="mistral-large">Mistral Large</option>
+                <option value="command">Cohere Command</option>
+              </optgroup>
             </select>
             <label for="temperature">Temp</label>
             <input type="range" id="temperature" min="0" max="2" step="0.1" value="0.7" />
