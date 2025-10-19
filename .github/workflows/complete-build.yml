@@ -15,7 +15,44 @@ on:
       - dev
 
 jobs:
+  build-core-tarball:
+    runs-on: ubuntu-latest
+    outputs:
+      tarball-path: ${{ steps.pack-core.outputs.tarball-path }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - name: Enable corepack and npm 9
+        run: |
+          corepack enable
+          corepack prepare npm@9.6.7 --activate
+          npm --version
+      - name: Clean old tarballs
+        run: rm -f core/openpilot-core-*.tgz openpilot-core-*.tgz
+      - name: Pack core module
+        id: pack-core
+        working-directory: ./core
+        run: |
+          npm pack
+          TARBALL=$(ls openpilot-core-*.tgz)
+          mv $TARBALL ../
+          echo "tarball-path=../$TARBALL" >> $GITHUB_OUTPUT
+      - name: Verify tarball integrity
+        run: |
+          sha512sum ${{ steps.pack-core.outputs.tarball-path }}
+      - name: Upload core tarball
+        uses: actions/upload-artifact@v4
+        with:
+          name: openpilot-core-tarball
+          path: ${{ steps.pack-core.outputs.tarball-path }}
+
   build-windows-installer:
+    needs: build-core-tarball
     runs-on: windows-latest
     continue-on-error: true
     steps:
@@ -31,62 +68,39 @@ jobs:
           corepack enable
           corepack prepare npm@9.6.7 --activate
           npm --version
-      - name: Clean npm cache
-        run: npm cache clean --force
-      - name: Install workspace dependencies
-        run: npm ci --workspaces
-      - name: Run all workspace tests
-        run: npm run test:all
-        continue-on-error: true
-      - name: Show npm error log
-        if: failure()
-        run: cat /home/runner/.npm/_logs/*.log
-      - name: Install desktop dependencies
-        working-directory: ./desktop
-        run: npm ci
-      - name: Build Windows installer
-        working-directory: ./desktop
-        run: npm run build:win
-      - name: Upload Windows installer
-        uses: actions/upload-artifact@v4
-        with:
-          name: windows-installer
-          path: desktop/dist/*.exe
-
-  build-windows-installer:
-    needs: build-core-tarball
-    runs-on: windows-latest
-    continue-on-error: true
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
       - name: Download core tarball
         uses: actions/download-artifact@v4
         with:
           name: openpilot-core-tarball
           path: .
       - name: Verify downloaded tarball integrity
+        shell: bash
         run: |
-          sha512sum core/openpilot-core-*.tgz
+          sha512sum ${{ needs.build-core-tarball.outputs.tarball-path }}
       - name: Copy tarball to all workspaces
+        shell: bash
         run: |
-          cp core/openpilot-core-*.tgz desktop/
-          cp core/openpilot-core-*.tgz web/
+          cp ${{ needs.build-core-tarball.outputs.tarball-path }} desktop/
+          cp ${{ needs.build-core-tarball.outputs.tarball-path }} web/
+          cp ${{ needs.build-core-tarball.outputs.tarball-path }} core/
+          cp ${{ needs.build-core-tarball.outputs.tarball-path }} vscode-extension/
       - name: Clean npm cache
         run: npm cache clean --force
       - name: Install workspace dependencies
         run: npm ci --workspaces
-      - name: Run all workspace tests
-        run: npm run test:all
         continue-on-error: true
       - name: Show npm error log
         if: failure()
-        run: cat /home/runner/.npm/_logs/*.log
+        shell: bash
+        run: |
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            cat $USERPROFILE/.npm/_logs/*.log
+          else
+            cat /home/runner/.npm/_logs/*.log
+          fi
+      - name: Run all workspace tests
+        run: npm run test:all
+        continue-on-error: true
       - name: Install desktop dependencies
         working-directory: ./desktop
         run: npm ci
@@ -115,8 +129,14 @@ jobs:
           corepack enable
           corepack prepare npm@9.6.7 --activate
           npm --version
+      - name: Clean npm cache
+        run: npm cache clean --force
       - name: Install workspace dependencies
         run: npm ci --workspaces
+        continue-on-error: true
+      - name: Show npm error log
+        if: failure()
+        run: cat /home/runner/.npm/_logs/*.log
       - name: Install desktop dependencies
         working-directory: ./desktop
         run: npm ci
@@ -145,8 +165,14 @@ jobs:
           corepack enable
           corepack prepare npm@9.6.7 --activate
           npm --version
+      - name: Clean npm cache
+        run: npm cache clean --force
       - name: Install workspace dependencies
         run: npm ci --workspaces
+        continue-on-error: true
+      - name: Show npm error log
+        if: failure()
+        run: cat /home/runner/.npm/_logs/*.log
       - name: Install android dependencies
         working-directory: ./android
         run: npm ci
@@ -211,8 +237,14 @@ jobs:
           corepack enable
           corepack prepare npm@9.6.7 --activate
           npm --version
+      - name: Clean npm cache
+        run: npm cache clean --force
       - name: Install workspace dependencies
         run: npm ci --workspaces
+        continue-on-error: true
+      - name: Show npm error log
+        if: failure()
+        run: cat /home/runner/.npm/_logs/*.log
       - name: Install web dependencies
         working-directory: ./web
         run: npm ci
