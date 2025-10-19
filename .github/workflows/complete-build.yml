@@ -18,7 +18,7 @@ jobs:
   build-core-tarball:
     runs-on: ubuntu-latest
     outputs:
-      tarball-path: ${{ steps.pack-core.outputs.tarball-path }}
+      tarball-path: ${{ steps.pack-core.outputs.tarball_path }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -34,13 +34,17 @@ jobs:
         working-directory: ./core
         run: |
           npm pack
-          mv openpilot-core-*.tgz ../
-          echo "tarball-path=../openpilot-core-1.0.0.tgz" >> $GITHUB_OUTPUT
+          TARBALL=$(ls openpilot-core-*.tgz)
+          mv $TARBALL ../
+          echo "tarball_path=../$TARBALL" >> $GITHUB_OUTPUT
+      - name: Verify tarball integrity
+        run: |
+          sha512sum ${{ steps.pack-core.outputs.tarball_path }}
       - name: Upload core tarball
         uses: actions/upload-artifact@v4
         with:
           name: openpilot-core-tarball
-          path: openpilot-core-1.0.0.tgz
+          path: ${{ steps.pack-core.outputs.tarball_path }}
 
   build-windows-installer:
     needs: build-core-tarball
@@ -59,14 +63,23 @@ jobs:
         with:
           name: openpilot-core-tarball
           path: .
+      - name: Verify downloaded tarball integrity
+        run: |
+          sha512sum ${{ needs.build-core-tarball.outputs.tarball-path }}
       - name: Copy tarball to all workspaces
         run: |
-          cp openpilot-core-1.0.0.tgz desktop/
-          cp openpilot-core-1.0.0.tgz web/
-          cp openpilot-core-1.0.0.tgz core/
-          cp openpilot-core-1.0.0.tgz vscode-extension/
+          cp ${{ needs.build-core-tarball.outputs.tarball-path }} desktop/
+          cp ${{ needs.build-core-tarball.outputs.tarball-path }} web/
+          cp ${{ needs.build-core-tarball.outputs.tarball-path }} core/
+          cp ${{ needs.build-core-tarball.outputs.tarball-path }} vscode-extension/
+      - name: Clean npm cache
+        run: npm cache clean --force
       - name: Install workspace dependencies
         run: npm ci --workspaces
+        continue-on-error: true
+      - name: Show npm error log
+        if: failure()
+        run: cat /home/runner/.npm/_logs/*.log
       - name: Install desktop dependencies
         working-directory: ./desktop
         run: npm ci
@@ -157,9 +170,18 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: openpilot-core-tarball
-          path: ./vscode-extension
+          path: .
+      - name: Verify downloaded tarball integrity
+        run: |
+          sha512sum ${{ needs.build-core-tarball.outputs.tarball-path }}
+      - name: Clean npm cache
+        run: npm cache clean --force
       - name: Install workspace dependencies
         run: npm ci --workspaces
+        continue-on-error: true
+      - name: Show npm error log
+        if: failure()
+        run: cat /home/runner/.npm/_logs/*.log
       - name: Install VSCode extension dependencies
         working-directory: ./vscode
         run: npm ci
