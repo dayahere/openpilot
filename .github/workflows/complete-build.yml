@@ -29,10 +29,11 @@ jobs:
           cache: 'npm'
       - name: Check npm version
         run: npm --version
-      - name: Upgrade npm to latest 9.x
-        run: npm install -g npm@9
-      - name: Check upgraded npm version
-        run: npm --version
+      - name: Enable corepack and npm 9
+        run: |
+          corepack enable
+          corepack prepare npm@9 --activate
+          npm --version
       - name: Clean old tarballs
         run: rm -f core/openpilot-core-*.tgz openpilot-core-*.tgz
       - name: Pack core module
