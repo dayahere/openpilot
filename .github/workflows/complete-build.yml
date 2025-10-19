@@ -71,6 +71,8 @@ jobs:
           cp core/openpilot-core-*.tgz web/
       - name: Clean npm cache
         run: npm cache clean --force
+      - name: Copy tarball to web
+        run: cp core/openpilot-core-*.tgz web/
       - name: Install workspace dependencies
         run: npm ci --workspaces
         continue-on-error: true
