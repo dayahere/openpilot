@@ -1,14 +1,49 @@
-name: Complete Production Build
+###############################
+# NOTE FOR MAINTAINERS:
+# Direct pushes to 'main' are restricted. Use pull requests for merging changes into 'main'.
+# See repository branch protection rules for enforcement.
+###############################
+name: Complete Build
 on:
   push:
-    branches: [ main, develop ]
-    tags: [ 'v*' ]
+    branches:
+      - main
+      - dev
   pull_request:
-    branches: [ main ]
-  workflow_dispatch:
+    branches:
+      - main
+      - dev
 
 jobs:
+  build-core-tarball:
+    runs-on: ubuntu-latest
+    outputs:
+      tarball-path: ${{ steps.pack-core.outputs.tarball-path }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - name: Clean old tarballs
+        run: rm -f core/openpilot-core-*.tgz openpilot-core-*.tgz
+      - name: Pack core module
+        id: pack-core
+        working-directory: ./core
+        run: |
+          npm pack
+          mv openpilot-core-*.tgz ../
+          echo "tarball-path=../openpilot-core-1.0.0.tgz" >> $GITHUB_OUTPUT
+      - name: Upload core tarball
+        uses: actions/upload-artifact@v4
+        with:
+          name: openpilot-core-tarball
+          path: openpilot-core-1.0.0.tgz
+
   build-windows-installer:
+    needs: build-core-tarball
     runs-on: windows-latest
     continue-on-error: true
     steps:
@@ -19,6 +54,11 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
+      - name: Download core tarball
+        uses: actions/download-artifact@v4
+        with:
+          name: openpilot-core-tarball
+          path: .
       - name: Install workspace dependencies
         run: npm ci --workspaces
       - name: Install desktop dependencies
@@ -32,9 +72,9 @@ jobs:
         with:
           name: windows-installer
           path: desktop/dist/*.exe
-          retention-days: 30
 
   build-linux-packages:
+    needs: build-core-tarball
     runs-on: ubuntu-latest
     continue-on-error: true
     steps:
@@ -45,6 +85,11 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
+      - name: Download core tarball
+        uses: actions/download-artifact@v4
+        with:
+          name: openpilot-core-tarball
+          path: .
       - name: Install workspace dependencies
         run: npm ci --workspaces
       - name: Install desktop dependencies
@@ -58,9 +103,9 @@ jobs:
         with:
           name: linux-packages
           path: desktop/dist/*.AppImage
-          retention-days: 30
 
   build-android-apk:
+    needs: build-core-tarball
     runs-on: ubuntu-latest
     continue-on-error: true
     steps:
@@ -71,6 +116,11 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
+      - name: Download core tarball
+        uses: actions/download-artifact@v4
+        with:
+          name: openpilot-core-tarball
+          path: .
       - name: Install workspace dependencies
         run: npm ci --workspaces
       - name: Install android dependencies
@@ -84,9 +134,9 @@ jobs:
         with:
           name: android-apk
           path: android/app/build/outputs/apk/release/*.apk
-          retention-days: 30
 
   build-vscode-extension:
+    needs: build-core-tarball
     runs-on: ubuntu-latest
     continue-on-error: true
     steps:
@@ -97,6 +147,11 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
+      - name: Download core tarball
+        uses: actions/download-artifact@v4
+        with:
+          name: openpilot-core-tarball
+          path: ./vscode-extension
       - name: Install workspace dependencies
         run: npm ci --workspaces
       - name: Install VSCode extension dependencies
@@ -109,10 +164,10 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: vscode-extension
-          path: vscode/openpilot-*.vsix
-          retention-days: 30
+          path: vscode/*.vsix
 
   build-web-app:
+    needs: build-core-tarball
     runs-on: ubuntu-latest
     continue-on-error: true
     steps:
@@ -123,6 +178,11 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
+      - name: Download core tarball
+        uses: actions/download-artifact@v4
+        with:
+          name: openpilot-core-tarball
+          path: .
       - name: Install workspace dependencies
         run: npm ci --workspaces
       - name: Install web dependencies
@@ -141,135 +201,3 @@ jobs:
         with:
           name: web-app
           path: web/openpilot-web-*.zip
-          retention-days: 30
-
-
-
-# GitHub Actions - Complete Build Workflow
-# Builds: Windows Installer, Linux Packages, Android APK, VSCode Extension, Web App
-
-
-
-  
-
-      
-      - name: Create web app archive
-        working-directory: ./web
-        run: |
-          cd build
-          zip -r ../openpilot-web-${{ github.ref_name }}.zip .
-      
-      - name: Upload web app
-        uses: actions/upload-artifact@v4
-        with:
-          name: web-app
-          path: web/openpilot-web-*.zip
-          retention-days: 30
-  
-  # ======================
-  # TESTS WITH COVERAGE
-  # ======================
-  test-with-coverage:
-    runs-on: ubuntu-latest
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-      
-      - name: Install workspace dependencies
-        run: npm ci --workspaces
-
-      - name: Install core dependencies
-        working-directory: ./core
-        run: npm ci
-
-      - name: Install test dependencies
-        working-directory: ./tests
-        run: npm ci
-      
-      - name: Run tests with coverage
-        working-directory: ./tests
-        run: npm test -- --coverage --collectCoverageFrom='../core/src/**/*.ts'
-        continue-on-error: true  # Continue even if tests fail
-      
-      - name: Upload coverage reports
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage-reports
-          path: tests/coverage/
-          retention-days: 30
-      
-      - name: Display coverage summary
-        working-directory: ./tests
-        run: |
-          echo "## Test Coverage Summary" >> $GITHUB_STEP_SUMMARY
-          cat coverage/lcov-report/index.html | grep -A 5 "coverage" || true
-        continue-on-error: true
-  
-  # ======================
-  # CREATE RELEASE
-  # ======================
-  create-release:
-    needs: [build-windows-installer, build-linux-packages, build-android-apk, build-vscode-extension, build-web-app, test-with-coverage]
-    runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/v')
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      
-      - name: Download all artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: release-artifacts
-      
-      - name: Display artifacts
-        run: |
-          echo "## Release Artifacts" >> $GITHUB_STEP_SUMMARY
-          find release-artifacts -type f -exec ls -lh {} \; >> $GITHUB_STEP_SUMMARY
-      
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v1
-        with:
-          files: |
-            release-artifacts/windows-installer/*.exe
-            release-artifacts/linux-appimage/*.AppImage
-            release-artifacts/linux-deb/*.deb
-            release-artifacts/android-apk/*.apk
-            release-artifacts/vscode-extension/*.vsix
-            release-artifacts/web-app/*.zip
-          draft: false
-          prerelease: false
-          generate_release_notes: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  
-  # ======================
-  # BUILD SUMMARY
-  # ======================
-  build-summary:
-    needs: [build-windows-installer, build-linux-packages, build-android-apk, build-vscode-extension, build-web-app, test-with-coverage]
-    runs-on: ubuntu-latest
-    if: always()
-    
-    steps:
-      - name: Generate summary
-        run: |
-          echo "# 🚀 OpenPilot Build Summary" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "## Build Status" >> $GITHUB_STEP_SUMMARY
-          echo "- Windows Installer: ${{ needs.build-windows-installer.result }}" >> $GITHUB_STEP_SUMMARY
-          echo "- Linux Packages: ${{ needs.build-linux-packages.result }}" >> $GITHUB_STEP_SUMMARY
-          echo "- Android APK: ${{ needs.build-android-apk.result }}" >> $GITHUB_STEP_SUMMARY
-          echo "- VSCode Extension: ${{ needs.build-vscode-extension.result }}" >> $GITHUB_STEP_SUMMARY
-          echo "- Web App: ${{ needs.build-web-app.result }}" >> $GITHUB_STEP_SUMMARY
-          echo "- Tests: ${{ needs.test-with-coverage.result }}" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "## Artifacts" >> $GITHUB_STEP_SUMMARY
-          echo "All build artifacts are available in the Actions artifacts." >> $GITHUB_STEP_SUMMARY
