@@ -1,8 +1,4 @@
-# GitHub Actions - Complete Build Workflow
-# Builds: Windows Installer, Linux Packages, Android APK, VSCode Extension, Web App
-
 name: Complete Production Build
-
 on:
   push:
     branches: [ main, develop ]
@@ -12,41 +8,6 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-linux-packages:
-    runs-on: ubuntu-latest
-    continue-on-error: true
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-      - name: Install desktop dependencies
-        working-directory: ./desktop
-        run: npm ci
-      - name: Build React app
-        working-directory: ./desktop
-        run: npm run build
-      - name: Build Linux packages
-        working-directory: ./desktop
-        run: npm run build:linux
-      - name: Upload Linux AppImage
-        uses: actions/upload-artifact@v4
-        with:
-          name: linux-appimage
-          path: desktop/dist/*.AppImage
-          retention-days: 30
-      - name: Upload Linux .deb
-        uses: actions/upload-artifact@v4
-        with:
-          name: linux-deb
-          path: desktop/dist/*.deb
-          retention-days: 30
-  # ======================
-  # DESKTOP: WINDOWS
-  # ======================
   build-windows-installer:
     runs-on: windows-latest
     continue-on-error: true
@@ -63,9 +24,6 @@ jobs:
       - name: Install desktop dependencies
         working-directory: ./desktop
         run: npm ci
-      - name: Build React app
-        working-directory: ./desktop
-        run: npm run build
       - name: Build Windows installer
         working-directory: ./desktop
         run: npm run build:win
@@ -76,8 +34,9 @@ jobs:
           path: desktop/dist/*.exe
           retention-days: 30
 
-  build-vscode-extension:
+  build-linux-packages:
     runs-on: ubuntu-latest
+    continue-on-error: true
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -86,203 +45,113 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
-      - name: Install core dependencies
-        working-directory: ./core
+      - name: Install workspace dependencies
+        run: npm ci --workspaces
+      - name: Install desktop dependencies
+        working-directory: ./desktop
         run: npm ci
-      - name: Build core library
-        working-directory: ./core
-        run: npm run build
-      - name: Pack core as tarball
-        working-directory: ./core
-        id: pack_core
-        run: |
-          npm pack --silent
-          TARBALL=$(ls *.tgz | head -1)
-          echo "TARBALL=$TARBALL" >> $GITHUB_ENV
-          echo "::set-output name=tarball::$TARBALL"
-          echo "Tarball size: $(ls -l $TARBALL | awk '{print $5}')" >> $GITHUB_STEP_SUMMARY
-          sha512sum $TARBALL > tarball.sha512
-          echo "Tarball SHA512: $(cat tarball.sha512)" >> $GITHUB_STEP_SUMMARY
-      - name: Copy core tarball into extension
-        run: cp core/${{ steps.pack_core.outputs.tarball }} vscode-extension/
-      - name: Install VSCode extension dev dependencies
-        working-directory: ./vscode-extension
-        run: |
-          rm -f package-lock.json || true
-          rm -rf node_modules || true
-          npm ci --omit=prod
-      - name: Compile VSCode extension
-        working-directory: ./vscode-extension
-        run: npm run compile
-      - name: Install VSCode extension production dependencies
-        working-directory: ./vscode-extension
-        run: |
-          rm -rf node_modules || true
-          npm install --production file:./${{ steps.pack_core.outputs.tarball }}
-          npm install --production
-      - name: Package VSCode extension
-        working-directory: ./vscode-extension
-        run: |
-          npm install -g @vscode/vsce
-          vsce package --no-dependencies --allow-missing-repository
-      - name: Upload VSCode extension
+      - name: Build Linux packages
+        working-directory: ./desktop
+        run: npm run build:linux
+      - name: Upload Linux packages
         uses: actions/upload-artifact@v4
         with:
-          name: vscode-extension
-          path: vscode-extension/*.vsix
+          name: linux-packages
+          path: desktop/dist/*.AppImage
           retention-days: 30
-  
-  # ======================
-  # ANDROID APK
-  # ======================
+
   build-android-apk:
     runs-on: ubuntu-latest
     continue-on-error: true
-    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
-      
-      - name: Setup Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '21'
-      
       - name: Install workspace dependencies
         run: npm ci --workspaces
-
-      - name: Install web dependencies
-        working-directory: ./web
+      - name: Install android dependencies
+        working-directory: ./android
         run: npm ci
-
-      - name: Install core dependencies
-        working-directory: ./core
-        run: npm ci
-
-      - name: Build core library
-        working-directory: ./core
+      - name: Build Android APK
+        working-directory: ./android
         run: npm run build
+      - name: Upload Android APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-apk
+          path: android/app/build/outputs/apk/release/*.apk
+          retention-days: 30
 
-      - name: Pack core as tarball
-        working-directory: ./core
-        run: |
-          npm pack --silent
-          TARBALL=$(ls *.tgz | head -1)
-          echo "TARBALL=$TARBALL" >> $GITHUB_ENV
-          echo "Tarball size: $(ls -l $TARBALL | awk '{print $5}')" >> $GITHUB_STEP_SUMMARY
-          sha512sum $TARBALL > tarball.sha512
-          echo "Tarball SHA512: $(cat tarball.sha512)" >> $GITHUB_STEP_SUMMARY
-
-      - name: Copy core tarball into extension
-        run: cp core/${{ steps.pack_core.outputs.tarball }} vscode-extension/
-
-      - name: Install VSCode extension dev dependencies
-        working-directory: ./vscode-extension
-        run: |
-          rm -f package-lock.json || true
-          rm -rf node_modules || true
-          npm ci --omit=prod
-
-      - name: Compile VSCode extension
-        working-directory: ./vscode-extension
-        run: npm run compile
-
-      - name: Install VSCode extension production dependencies
-        working-directory: ./vscode-extension
-        run: |
-          rm -rf node_modules || true
-          npm install --production file:./${{ steps.pack_core.outputs.tarball }}
-          npm install --production
-
-      - name: Package VSCode extension
-        working-directory: ./vscode-extension
-        run: |
-          npm install -g @vscode/vsce
-          vsce package --no-dependencies --allow-missing-repository
+  build-vscode-extension:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
       - name: Install workspace dependencies
         run: npm ci --workspaces
-
-      - name: Pack core as tarball
-        working-directory: ./core
-        run: |
-          npm pack --silent
-          echo "TARBALL=openpilot-core-1.0.0.tgz" >> $GITHUB_ENV
-          echo "Tarball size: $(ls -l $TARBALL | awk '{print $5}')" >> $GITHUB_STEP_SUMMARY
-          sha512sum $TARBALL > tarball.sha512
-          echo "Tarball SHA512: $(cat tarball.sha512)" >> $GITHUB_STEP_SUMMARY
-
-      - name: Copy core tarball into extension
-        run: cp core/${{ env.TARBALL }} vscode-extension/
-      
-      - name: Install VSCode extension dev dependencies
-        working-directory: ./vscode-extension
-        run: |
-          rm -f package-lock.json || true
-          rm -rf node_modules || true
-          npm install --omit=prod --legacy-peer-deps
-          npm audit fix --legacy-peer-deps
-
-      - name: Compile VSCode extension
-        working-directory: ./vscode-extension
-        run: npm run compile
-
-      - name: Install VSCode extension production dependencies
-        working-directory: ./vscode-extension
-        run: |
-          rm -rf node_modules || true
-          npm install --production --legacy-peer-deps file:./${{ env.TARBALL }}
-          npm install --production --legacy-peer-deps
-          npm audit fix --legacy-peer-deps
-      
-      - name: Package VSCode extension
-        working-directory: ./vscode-extension
-        run: |
-          npm install -g @vscode/vsce
-          vsce package --no-dependencies --allow-missing-repository
-      
+      - name: Install VSCode extension dependencies
+        working-directory: ./vscode
+        run: npm ci
+      - name: Build VSCode extension
+        working-directory: ./vscode
+        run: npm run package
       - name: Upload VSCode extension
         uses: actions/upload-artifact@v4
         with:
           name: vscode-extension
-          path: vscode-extension/*.vsix
+          path: vscode/openpilot-*.vsix
           retention-days: 30
-  
-  # ======================
-  # WEB APP
-  # ======================
+
   build-web-app:
     runs-on: ubuntu-latest
     continue-on-error: true
-    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
-      
       - name: Install workspace dependencies
-        run: npm install --workspaces --legacy-peer-deps
-      
+        run: npm ci --workspaces
       - name: Install web dependencies
         working-directory: ./web
-        run: |
-          npm install --legacy-peer-deps
-          npm audit fix --legacy-peer-deps
-      
+        run: npm ci
       - name: Build web app
         working-directory: ./web
         run: npm run build
+      - name: Create web app archive
+        working-directory: ./web
+        run: |
+          cd build
+          zip -r ../openpilot-web-${{ github.ref_name }}.zip .
+      - name: Upload web app
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-app
+          path: web/openpilot-web-*.zip
+          retention-days: 30
+
+
+
+# GitHub Actions - Complete Build Workflow
+# Builds: Windows Installer, Linux Packages, Android APK, VSCode Extension, Web App
+
+
+
+  
+
       
       - name: Create web app archive
         working-directory: ./web
