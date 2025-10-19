@@ -1,0 +1,7 @@
+packages:
+  - 'core'
+  - 'vscode-extension'
+  - 'desktop'
+  - 'web'
+  - 'backend'
+  - 'android'

@@ -3,14 +3,7 @@
   "version": "1.0.0",
   "description": "Free AI coding assistant - Open source alternative to GitHub Copilot",
   "private": true,
-  "workspaces": [
-    "core",
-    "vscode-extension",
-    "desktop",
-    "web",
-    "backend",
-    "android"
-  ],
+
   "scripts": {
     "install:all": "npm install && npm run install:workspaces",
     "install:workspaces": "npm install --workspaces",
