@@ -20,4 +20,7 @@ module.exports = {
       statements: 80,
     },
   },
+  moduleNameMapper: {
+    '^uuid$': '<rootDir>/../../node_modules/uuid/dist/index.js',
+  },
 };
