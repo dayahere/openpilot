@@ -59,7 +59,10 @@ RUN if [ -f package.json ]; then npm install; fi || true
 
 # Build core library and generate tarball with integrity check
 WORKDIR /app/core
-RUN npm run build && npm pack && mv openpilot-core-1.0.0.tgz /app/ && npm install --legacy-peer-deps /app/openpilot-core-1.0.0.tgz && echo "Tarball integrity check:" && sha512sum /app/openpilot-core-1.0.0.tgz > /app/tarball.sha512
+RUN npm run build && npm pack && mv openpilot-core-1.0.0.tgz /app/ && npm install --legacy-peer-deps /app/openpilot-core-1.0.0.tgz && echo "Tarball SHA512:" && sha512sum /app/openpilot-core-1.0.0.tgz > /app/tarball.sha512 && cat /app/tarball.sha512
+RUN npm install -g npm@latest && \
+    npm install glob@9 rimraf@5 eslint@9 @eslint/config-array@latest @humanwhocodes/config-array@latest --legacy-peer-deps && \
+    npm audit fix --legacy-peer-deps
 ENV TARBALL_PATH=/app/openpilot-core-1.0.0.tgz
 
 # Set working directory back to app root

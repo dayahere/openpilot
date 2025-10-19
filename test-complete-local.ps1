@@ -701,80 +701,84 @@ $vscodeArtifactsDir = Join-Path $artifactsDir "vscode"
 $androidArtifactsDir = Join-Path $artifactsDir "android"
 New-Item -ItemType Directory -Path $webArtifactsDir, $desktopArtifactsDir, $vscodeArtifactsDir, $androidArtifactsDir -Force | Out-Null
 
-# Parallel builds after core (using jobs)
-$workspaceRoot = (Resolve-Path ".").Path
-$tarballSrc = Join-Path $workspaceRoot "openpilot-core-1.0.0.tgz"
-$tarballDst = Join-Path $workspaceRoot "core\openpilot-core-1.0.0.tgz"
 
-$webJob = Start-Job -ScriptBlock { 
-    Set-Location $using:workspaceRoot; 
-    Copy-Item $using:tarballSrc $using:tarballDst -Force -ErrorAction SilentlyContinue; 
-    $webDir = "$using:workspaceRoot/web";
-    if (Test-Path "$webDir/package.json") {
-        docker run --rm -v "$webDir:/workspace" -w /workspace openpilot-test:latest sh -c "rm -rf node_modules package-lock.json && npm install --omit=prod --legacy-peer-deps && npm audit fix --legacy-peer-deps && npm run build && cp -r dist/* /workspace/.." *>&1 | Out-File "$using:workspaceRoot/web-job.log";
-        if ($LASTEXITCODE -eq 0) { Copy-Item "$webDir/dist/*" $using:webArtifactsDir -Force -Recurse -ErrorAction SilentlyContinue }
-    } else {
-        "Web package.json not found" | Out-File "$using:workspaceRoot/web-job.log"
-    }
-}
-$desktopJob = Start-Job -ScriptBlock { 
-    Set-Location $using:workspaceRoot; 
-    Copy-Item $using:tarballSrc $using:tarballDst -Force -ErrorAction SilentlyContinue; 
-    $desktopDir = "$using:workspaceRoot/desktop";
-    if (Test-Path "$desktopDir/package.json") {
-        docker run --rm -v "$desktopDir:/workspace" -w /workspace openpilot-test:latest sh -c "rm -rf node_modules package-lock.json && npm install --omit=prod --legacy-peer-deps && npm audit fix --legacy-peer-deps && npm run build && cp -r dist/* /workspace/.." *>&1 | Out-File "$using:workspaceRoot/desktop-job.log";
-        if ($LASTEXITCODE -eq 0) { Copy-Item "$desktopDir/dist/*" $using:desktopArtifactsDir -Force -Recurse -ErrorAction SilentlyContinue }
-    } else {
-        "Desktop package.json not found" | Out-File "$using:workspaceRoot/desktop-job.log"
-    }
-}
-$vscodeJob = Start-Job -ScriptBlock { 
-    Set-Location $using:workspaceRoot; 
-    Copy-Item $using:tarballSrc $using:tarballDst -Force -ErrorAction SilentlyContinue; 
-    $vscodeDir = "$using:workspaceRoot/vscode-extension";
-    if (Test-Path "$vscodeDir/package.json") {
-        docker run --rm -v "$vscodeDir:/workspace" -w /workspace openpilot-test:latest sh -c "rm -rf node_modules package-lock.json && npm install --omit=prod --legacy-peer-deps && npm audit fix --legacy-peer-deps && npm run build && npm pack && cp *.tgz /workspace/.." *>&1 | Out-File "$using:workspaceRoot/vscode-job.log";
-        if ($LASTEXITCODE -eq 0) { Copy-Item "$vscodeDir/*.tgz" $using:vscodeArtifactsDir -Force -ErrorAction SilentlyContinue }
-    } else {
-        "VSCode package.json not found" | Out-File "$using:workspaceRoot/vscode-job.log"
-    }
-}
-$androidJob = Start-Job -ScriptBlock { 
-    Set-Location $using:workspaceRoot; 
-    Copy-Item $using:tarballSrc $using:tarballDst -Force -ErrorAction SilentlyContinue; 
-    $androidDir = "$using:workspaceRoot/android";
-    if (Test-Path "$androidDir/pubspec.yaml") {
-        docker run --rm -v "$androidDir:/workspace" -w /workspace openpilot-test:latest sh -c "flutter pub get && flutter build apk && cp build/app/outputs/flutter-apk/app-release.apk /workspace/.." *>&1 | Out-File "$using:workspaceRoot/android-job.log";
-        if ($LASTEXITCODE -eq 0) { Copy-Item "$androidDir/app-release.apk" $using:androidArtifactsDir -Force -ErrorAction SilentlyContinue }
-    } else {
-        "Android pubspec.yaml not found" | Out-File "$using:workspaceRoot/android-job.log"
-    }
-}
+# Run builds sequentially (or parallel with jobs if stable) - continue even on failures
+Write-Section "Running Builds (Sequential - Artifacts Generated Regardless of Failures)"
+$buildResults = @()
 
-$jobs = @($webJob, $desktopJob, $vscodeJob, $androidJob)
-Write-ColorOutput "Waiting for parallel build jobs to complete..." $InfoColor
-$jobs | Wait-Job
-
-# Process job outputs
-$results = $jobs | ForEach-Object {
-    $logFile = switch ($_.Name) {
-        "Job1" { "$workspaceRoot/web-job.log" }
-        "Job2" { "$workspaceRoot/desktop-job.log" }
-        "Job3" { "$workspaceRoot/vscode-job.log" }
-        "Job4" { "$workspaceRoot/android-job.log" }
+# Web Build
+Write-Step "Building web app..."
+$webSuccess = $false
+if (Test-Path "web/package.json") {
+    docker run --rm -v "${PWD}/web:/workspace" -w /workspace openpilot-test:latest sh -c "rm -rf node_modules package-lock.json && npm install --omit=prod --legacy-peer-deps && npm audit fix --legacy-peer-deps && npm run build" | Out-Host
+    if ($LASTEXITCODE -eq 0) {
+        Copy-Item "web/dist/*" $webArtifactsDir -Force -Recurse -ErrorAction SilentlyContinue
+        $webSuccess = $true
+        Write-Success "Web build successful [OK]"
+    } else {
+        Write-Failure "Web build failed [X]"
     }
-    $output = Get-Content $logFile -ErrorAction SilentlyContinue | Where-Object { $_ -notmatch "Container.*Running|OCI runtime.*failed|executable file not found" }
-    Write-Host $output
-    $success = $output -match "\[PASS\].*successful" -or $output -match "Successfully built.*apk" -or $output -match "npm notice.*total files"
-    Remove-Item $logFile -ErrorAction SilentlyContinue
-    $success
+} else {
+    Write-Warning "Web package.json not found"
 }
+$buildResults += $webSuccess
+
+# Desktop Build
+Write-Step "Building desktop app..."
+$desktopSuccess = $false
+if (Test-Path "desktop/package.json") {
+    docker run --rm -v "${PWD}/desktop:/workspace" -w /workspace openpilot-test:latest sh -c "rm -rf node_modules package-lock.json && npm install --omit=prod --legacy-peer-deps && npm audit fix --legacy-peer-deps && npm run build" | Out-Host
+    if ($LASTEXITCODE -eq 0) {
+        Copy-Item "desktop/dist/*" $desktopArtifactsDir -Force -Recurse -ErrorAction SilentlyContinue
+        $desktopSuccess = $true
+        Write-Success "Desktop build successful [OK]"
+    } else {
+        Write-Failure "Desktop build failed [X]"
+    }
+} else {
+    Write-Warning "Desktop package.json not found"
+}
+$buildResults += $desktopSuccess
+
+# VSCode Extension Build
+Write-Step "Building VSCode extension..."
+$vscodeSuccess = $false
+if (Test-Path "vscode-extension/package.json") {
+    docker run --rm -v "${PWD}/vscode-extension:/workspace" -w /workspace openpilot-test:latest sh -c "rm -rf node_modules package-lock.json && npm install --omit=prod --legacy-peer-deps && npm audit fix --legacy-peer-deps && npm run build && vsce package --no-dependencies --allow-missing-repository" | Out-Host
+    if ($LASTEXITCODE -eq 0) {
+        Copy-Item "vscode-extension/*.vsix" $vscodeArtifactsDir -Force -ErrorAction SilentlyContinue
+        $vscodeSuccess = $true
+        Write-Success "VSCode extension build successful [OK]"
+    } else {
+        Write-Failure "VSCode extension build failed [X]"
+    }
+} else {
+    Write-Warning "VSCode package.json not found"
+}
+$buildResults += $vscodeSuccess
+
+# Android Build (assuming Flutter)
+Write-Step "Building Android app..."
+$androidSuccess = $false
+if (Test-Path "android/pubspec.yaml") {
+    docker run --rm -v "${PWD}/android:/workspace" -w /workspace openpilot-test:latest sh -c "flutter pub get && flutter build apk" | Out-Host
+    if ($LASTEXITCODE -eq 0) {
+        Copy-Item "android/build/app/outputs/flutter-apk/app-release.apk" $androidArtifactsDir -Force -ErrorAction SilentlyContinue
+        $androidSuccess = $true
+        Write-Success "Android build successful [OK]"
+    } else {
+        Write-Failure "Android build failed [X]"
+    }
+} else {
+    Write-Warning "Android pubspec.yaml not found"
+}
+$buildResults += $androidSuccess
 
 Write-ColorOutput "Artifacts generated in $artifactsDir" $InfoColor
-if ($results -contains $false) {
-    Write-Warning "One or more parallel builds failed, but artifacts were generated where possible."
+if ($buildResults -contains $false) {
+    Write-Warning "One or more builds failed, but artifacts were generated where possible."
 } else {
-    Write-Success "All parallel builds completed successfully"
+    Write-Success "All builds completed successfully"
 }
 
     $jobs = @($webJob, $desktopJob, $vscodeJob, $androidJob)
