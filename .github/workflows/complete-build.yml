@@ -145,9 +145,6 @@ jobs:
       - name: Hoist node_modules for VSCE compatibility
         working-directory: ./vscode-extension
         run: pnpm install --shamefully-hoist
-      - name: Fallback npm install for VSCE compatibility
-        working-directory: ./vscode-extension
-        run: npm install --legacy-peer-deps
       - name: Build VSCode extension
         working-directory: ./vscode-extension
         run: pnpm run package
