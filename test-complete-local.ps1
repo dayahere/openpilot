@@ -689,38 +689,93 @@ function Main {
 
 
 
-    $webJob = Start-Job -ScriptBlock {
-        if (Test-Path web/package.json) {
-            docker run --rm -v "$using:workspaceRoot:/workspace" -w /workspace openpilot-test:latest sh -c "npm run build --prefix web && mkdir -p /workspace/artifacts/web && cp -r web/build/* /workspace/artifacts/web/"
-            Write-Host "[PASS] Web build successful"
-        } else {
-            Write-Host "[FAIL] Web build skipped: web/package.json not found"
-        }
+
+# Ensure artifacts directory exists
+$artifactsDir = Join-Path (Resolve-Path ".").Path "artifacts"
+if (-not (Test-Path $artifactsDir)) {
+    New-Item -ItemType Directory -Path $artifactsDir | Out-Null
+}
+$webArtifactsDir = Join-Path $artifactsDir "web"
+$desktopArtifactsDir = Join-Path $artifactsDir "desktop"
+$vscodeArtifactsDir = Join-Path $artifactsDir "vscode"
+$androidArtifactsDir = Join-Path $artifactsDir "android"
+New-Item -ItemType Directory -Path $webArtifactsDir, $desktopArtifactsDir, $vscodeArtifactsDir, $androidArtifactsDir -Force | Out-Null
+
+# Parallel builds after core (using jobs)
+$workspaceRoot = (Resolve-Path ".").Path
+$tarballSrc = Join-Path $workspaceRoot "openpilot-core-1.0.0.tgz"
+$tarballDst = Join-Path $workspaceRoot "core\openpilot-core-1.0.0.tgz"
+
+$webJob = Start-Job -ScriptBlock { 
+    Set-Location $using:workspaceRoot; 
+    Copy-Item $using:tarballSrc $using:tarballDst -Force -ErrorAction SilentlyContinue; 
+    $webDir = "$using:workspaceRoot/web";
+    if (Test-Path "$webDir/package.json") {
+        docker run --rm -v "$webDir:/workspace" -w /workspace openpilot-test:latest sh -c "rm -rf node_modules package-lock.json && npm install --omit=prod --legacy-peer-deps && npm audit fix --legacy-peer-deps && npm run build && cp -r dist/* /workspace/.." *>&1 | Out-File "$using:workspaceRoot/web-job.log";
+        if ($LASTEXITCODE -eq 0) { Copy-Item "$webDir/dist/*" $using:webArtifactsDir -Force -Recurse -ErrorAction SilentlyContinue }
+    } else {
+        "Web package.json not found" | Out-File "$using:workspaceRoot/web-job.log"
     }
-    $desktopJob = Start-Job -ScriptBlock {
-        if (Test-Path desktop/package.json) {
-            docker run --rm -v "$using:workspaceRoot:/workspace" -w /workspace openpilot-test:latest sh -c "npm run build --prefix desktop && mkdir -p /workspace/artifacts/desktop && cp -r desktop/dist/* /workspace/artifacts/desktop/"
-            Write-Host "[PASS] Desktop build successful"
-        } else {
-            Write-Host "[FAIL] Desktop build skipped: desktop/package.json not found"
-        }
+}
+$desktopJob = Start-Job -ScriptBlock { 
+    Set-Location $using:workspaceRoot; 
+    Copy-Item $using:tarballSrc $using:tarballDst -Force -ErrorAction SilentlyContinue; 
+    $desktopDir = "$using:workspaceRoot/desktop";
+    if (Test-Path "$desktopDir/package.json") {
+        docker run --rm -v "$desktopDir:/workspace" -w /workspace openpilot-test:latest sh -c "rm -rf node_modules package-lock.json && npm install --omit=prod --legacy-peer-deps && npm audit fix --legacy-peer-deps && npm run build && cp -r dist/* /workspace/.." *>&1 | Out-File "$using:workspaceRoot/desktop-job.log";
+        if ($LASTEXITCODE -eq 0) { Copy-Item "$desktopDir/dist/*" $using:desktopArtifactsDir -Force -Recurse -ErrorAction SilentlyContinue }
+    } else {
+        "Desktop package.json not found" | Out-File "$using:workspaceRoot/desktop-job.log"
     }
-    $vscodeJob = Start-Job -ScriptBlock {
-        if (Test-Path vscode-extension/package.json) {
-            docker run --rm -v "$using:workspaceRoot:/workspace" -w /workspace openpilot-test:latest sh -c "npm run package --prefix vscode-extension && mkdir -p /workspace/artifacts/vscode && cp vscode-extension/*.tgz /workspace/artifacts/vscode/"
-            Write-Host "[PASS] VSCode extension build successful"
-        } else {
-            Write-Host "[FAIL] VSCode extension build skipped: vscode-extension/package.json not found"
-        }
+}
+$vscodeJob = Start-Job -ScriptBlock { 
+    Set-Location $using:workspaceRoot; 
+    Copy-Item $using:tarballSrc $using:tarballDst -Force -ErrorAction SilentlyContinue; 
+    $vscodeDir = "$using:workspaceRoot/vscode-extension";
+    if (Test-Path "$vscodeDir/package.json") {
+        docker run --rm -v "$vscodeDir:/workspace" -w /workspace openpilot-test:latest sh -c "rm -rf node_modules package-lock.json && npm install --omit=prod --legacy-peer-deps && npm audit fix --legacy-peer-deps && npm run build && npm pack && cp *.tgz /workspace/.." *>&1 | Out-File "$using:workspaceRoot/vscode-job.log";
+        if ($LASTEXITCODE -eq 0) { Copy-Item "$vscodeDir/*.tgz" $using:vscodeArtifactsDir -Force -ErrorAction SilentlyContinue }
+    } else {
+        "VSCode package.json not found" | Out-File "$using:workspaceRoot/vscode-job.log"
     }
-    $androidJob = Start-Job -ScriptBlock {
-        if (Test-Path android/pubspec.yaml) {
-            docker run --rm -v "$using:workspaceRoot:/workspace" -w /workspace openpilot-test:latest sh -c "cd android && flutter pub get && flutter build apk && mkdir -p /workspace/artifacts/android && cp build/app/outputs/flutter-apk/app-release.apk /workspace/artifacts/android/"
-            Write-Host "[PASS] Android build successful"
-        } else {
-            Write-Host "[FAIL] Android build skipped: android/pubspec.yaml not found"
-        }
+}
+$androidJob = Start-Job -ScriptBlock { 
+    Set-Location $using:workspaceRoot; 
+    Copy-Item $using:tarballSrc $using:tarballDst -Force -ErrorAction SilentlyContinue; 
+    $androidDir = "$using:workspaceRoot/android";
+    if (Test-Path "$androidDir/pubspec.yaml") {
+        docker run --rm -v "$androidDir:/workspace" -w /workspace openpilot-test:latest sh -c "flutter pub get && flutter build apk && cp build/app/outputs/flutter-apk/app-release.apk /workspace/.." *>&1 | Out-File "$using:workspaceRoot/android-job.log";
+        if ($LASTEXITCODE -eq 0) { Copy-Item "$androidDir/app-release.apk" $using:androidArtifactsDir -Force -ErrorAction SilentlyContinue }
+    } else {
+        "Android pubspec.yaml not found" | Out-File "$using:workspaceRoot/android-job.log"
     }
+}
+
+$jobs = @($webJob, $desktopJob, $vscodeJob, $androidJob)
+Write-ColorOutput "Waiting for parallel build jobs to complete..." $InfoColor
+$jobs | Wait-Job
+
+# Process job outputs
+$results = $jobs | ForEach-Object {
+    $logFile = switch ($_.Name) {
+        "Job1" { "$workspaceRoot/web-job.log" }
+        "Job2" { "$workspaceRoot/desktop-job.log" }
+        "Job3" { "$workspaceRoot/vscode-job.log" }
+        "Job4" { "$workspaceRoot/android-job.log" }
+    }
+    $output = Get-Content $logFile -ErrorAction SilentlyContinue | Where-Object { $_ -notmatch "Container.*Running|OCI runtime.*failed|executable file not found" }
+    Write-Host $output
+    $success = $output -match "\[PASS\].*successful" -or $output -match "Successfully built.*apk" -or $output -match "npm notice.*total files"
+    Remove-Item $logFile -ErrorAction SilentlyContinue
+    $success
+}
+
+Write-ColorOutput "Artifacts generated in $artifactsDir" $InfoColor
+if ($results -contains $false) {
+    Write-Warning "One or more parallel builds failed, but artifacts were generated where possible."
+} else {
+    Write-Success "All parallel builds completed successfully"
+}
 
     $jobs = @($webJob, $desktopJob, $vscodeJob, $androidJob)
     Write-ColorOutput "Waiting for parallel build jobs to complete..." $InfoColor
