@@ -59,6 +59,12 @@ jobs:
         with:
           name: openpilot-core-tarball
           path: .
+      - name: Copy tarball to all workspaces
+        run: |
+          cp openpilot-core-1.0.0.tgz desktop/
+          cp openpilot-core-1.0.0.tgz web/
+          cp openpilot-core-1.0.0.tgz core/
+          cp openpilot-core-1.0.0.tgz vscode-extension/
       - name: Install workspace dependencies
         run: npm ci --workspaces
       - name: Install desktop dependencies
