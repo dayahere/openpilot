@@ -12,9 +12,8 @@
         "skipLibCheck":  true,
         // "rootDir":  "./src",
         "sourceMap":  true,
-        "types": ["vscode", "node"]
-    , "mocha"
-                        },
+        "types": ["vscode", "node", "mocha"]
+    },
     "exclude":  [
         "node_modules",
         ".vscode-test",

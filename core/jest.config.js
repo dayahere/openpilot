@@ -20,4 +20,5 @@ module.exports = {
       statements: 80,
     },
   },
+  extensionsToTreatAsEsm: ['.ts'],
 };
