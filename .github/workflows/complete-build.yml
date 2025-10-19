@@ -180,16 +180,16 @@ jobs:
         if: failure()
         run: cat /home/runner/.npm/_logs/*.log
       - name: Install VSCode extension dependencies
-        working-directory: ./vscode
+        working-directory: ./vscode-extension
         run: npm ci
       - name: Build VSCode extension
-        working-directory: ./vscode
+        working-directory: ./vscode-extension
         run: npm run package
       - name: Upload VSCode extension
         uses: actions/upload-artifact@v4
         with:
           name: vscode-extension
-          path: vscode/*.vsix
+          path: vscode-extension/*.vsix
 
   build-web-app:
     needs: build-core-tarball
