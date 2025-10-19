@@ -35,16 +35,15 @@ jobs:
         run: |
           npm pack
           TARBALL=$(ls openpilot-core-*.tgz)
-          mv $TARBALL ../
-          echo "tarball_path=../$TARBALL" >> $GITHUB_OUTPUT
+          echo "tarball_path=core/$TARBALL" >> $GITHUB_OUTPUT
       - name: Verify tarball integrity
         run: |
-          sha512sum ${{ steps.pack-core.outputs.tarball_path }}
+          sha512sum core/openpilot-core-*.tgz
       - name: Upload core tarball
         uses: actions/upload-artifact@v4
         with:
           name: openpilot-core-tarball
-          path: ${{ steps.pack-core.outputs.tarball_path }}
+          path: core/openpilot-core-*.tgz
 
   build-windows-installer:
     needs: build-core-tarball
@@ -65,13 +64,12 @@ jobs:
           path: .
       - name: Verify downloaded tarball integrity
         run: |
-          sha512sum ${{ needs.build-core-tarball.outputs.tarball-path }}
+          sha512sum core/openpilot-core-*.tgz
       - name: Copy tarball to all workspaces
         run: |
-          cp ${{ needs.build-core-tarball.outputs.tarball-path }} desktop/
-          cp ${{ needs.build-core-tarball.outputs.tarball-path }} web/
-          cp ${{ needs.build-core-tarball.outputs.tarball-path }} core/
-          cp ${{ needs.build-core-tarball.outputs.tarball-path }} vscode-extension/
+          cp core/openpilot-core-*.tgz desktop/
+          cp core/openpilot-core-*.tgz web/
+          cp core/openpilot-core-*.tgz vscode-extension/
       - name: Clean npm cache
         run: npm cache clean --force
       - name: Install workspace dependencies
