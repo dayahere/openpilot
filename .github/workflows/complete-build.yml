@@ -26,12 +26,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
-      - name: Enable corepack and npm 9
-        run: |
-          corepack enable
-          corepack prepare npm@9.6.7 --activate
-          npm --version
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
 
   build-windows-installer:
     needs: build-core-tarball
@@ -50,29 +48,16 @@ jobs:
           corepack enable
           corepack prepare npm@9.6.7 --activate
           npm --version
-      - name: Clean npm cache
-        run: npm cache clean --force
-      - name: Install workspace dependencies
-        run: npm ci --workspaces
-        continue-on-error: true
-      - name: Show npm error log
-        if: failure()
-        shell: bash
-        run: |
-          if [ "$RUNNER_OS" = "Windows" ]; then
-            cat $USERPROFILE/.npm/_logs/*.log
-          else
-            cat /home/runner/.npm/_logs/*.log
-          fi
+      - name: Install dependencies
+        run: pnpm install
       - name: Run all workspace tests
-        run: npm run test:all
-        continue-on-error: true
+        run: pnpm run test:all
       - name: Install desktop dependencies
         working-directory: ./desktop
-        run: npm ci
+        run: pnpm install
       - name: Build Windows installer
         working-directory: ./desktop
-        run: npm run build:win
+        run: pnpm run build:win
       - name: Upload Windows installer
         uses: actions/upload-artifact@v4
         with:
@@ -95,20 +80,14 @@ jobs:
           corepack enable
           corepack prepare npm@9.6.7 --activate
           npm --version
-      - name: Clean npm cache
-        run: npm cache clean --force
-      - name: Install workspace dependencies
-        run: npm ci --workspaces
-        continue-on-error: true
-      - name: Show npm error log
-        if: failure()
-        run: cat /home/runner/.npm/_logs/*.log
+      - name: Install dependencies
+        run: pnpm install
       - name: Install desktop dependencies
         working-directory: ./desktop
-        run: npm ci
+        run: pnpm install
       - name: Build Linux packages
         working-directory: ./desktop
-        run: npm run build:linux
+        run: pnpm run build:linux
       - name: Upload Linux packages
         uses: actions/upload-artifact@v4
         with:
@@ -131,20 +110,14 @@ jobs:
           corepack enable
           corepack prepare npm@9.6.7 --activate
           npm --version
-      - name: Clean npm cache
-        run: npm cache clean --force
-      - name: Install workspace dependencies
-        run: npm ci --workspaces
-        continue-on-error: true
-      - name: Show npm error log
-        if: failure()
-        run: cat /home/runner/.npm/_logs/*.log
+      - name: Install dependencies
+        run: pnpm install
       - name: Install android dependencies
         working-directory: ./android
-        run: npm ci
+        run: pnpm install
       - name: Build Android APK
         working-directory: ./android
-        run: npm run build
+        run: pnpm run build
       - name: Upload Android APK
         uses: actions/upload-artifact@v4
         with:
@@ -167,20 +140,14 @@ jobs:
           corepack enable
           corepack prepare npm@9.6.7 --activate
           npm --version
-      - name: Clean npm cache
-        run: npm cache clean --force
-      - name: Install workspace dependencies
-        run: npm ci --workspaces
-        continue-on-error: true
-      - name: Show npm error log
-        if: failure()
-        run: cat /home/runner/.npm/_logs/*.log
+      - name: Install dependencies
+        run: pnpm install
       - name: Install VSCode extension dependencies
         working-directory: ./vscode-extension
-        run: npm ci
+        run: pnpm install
       - name: Build VSCode extension
         working-directory: ./vscode-extension
-        run: npm run package
+        run: pnpm run package
       - name: Upload VSCode extension
         uses: actions/upload-artifact@v4
         with:
@@ -203,20 +170,14 @@ jobs:
           corepack enable
           corepack prepare npm@9.6.7 --activate
           npm --version
-      - name: Clean npm cache
-        run: npm cache clean --force
-      - name: Install workspace dependencies
-        run: npm ci --workspaces
-        continue-on-error: true
-      - name: Show npm error log
-        if: failure()
-        run: cat /home/runner/.npm/_logs/*.log
+      - name: Install dependencies
+        run: pnpm install
       - name: Install web dependencies
         working-directory: ./web
-        run: npm ci
+        run: pnpm install
       - name: Build web app
         working-directory: ./web
-        run: npm run build
+        run: pnpm run build
       - name: Create web app archive
         working-directory: ./web
         run: |
