@@ -27,6 +27,8 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
+      - name: Check npm version
+        run: npm --version
       - name: Clean old tarballs
         run: rm -f core/openpilot-core-*.tgz openpilot-core-*.tgz
       - name: Pack core module
