@@ -1,22 +1,35 @@
 # OpenPilot Test Environment Dockerfile
 # Provides a complete testing environment with all dependencies
 
-FROM node:20-alpine
+
+FROM node:20
 
 # Install Python for auto-fix scripts
-RUN apk add --no-cache \
+RUN apt-get update && apt-get install -y \
     python3 \
-    py3-pip \
+    python3-pip \
     git \
-    bash
+    bash \
+    curl \
+    openjdk-17-jdk \
+    unzip \
+    wget
+
+# Install Flutter for Android builds
+RUN wget https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_3.24.3-stable.tar.xz \
+    && tar -xf flutter_linux_3.24.3-stable.tar.xz -C /opt \
+    && rm flutter_linux_3.24.3-stable.tar.xz \
+    && /opt/flutter/bin/flutter config --no-analytics \
+    && /opt/flutter/bin/flutter precache
+ENV PATH="$PATH:/opt/flutter/bin"
 
 # Set working directory
 WORKDIR /app
 
-# Copy package files first for better caching
 COPY package*.json ./
 COPY core/package*.json ./core/
 COPY tests/package*.json ./tests/
+COPY openpilot-core-1.0.0.tgz ./
 
 # Install root dependencies
 RUN npm install || true

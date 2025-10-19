@@ -91,6 +91,11 @@ export function createTestAIConfig(
   provider: AIProvider = AIProvider.OLLAMA,
   model: string = 'codellama:7b'
 ): AIConfig {
+  // Force usage of OLLAMA_API_URL and log for debugging
+  const apiUrl = process.env.OLLAMA_API_URL;
+  // Debug log to verify environment variable
+  // eslint-disable-next-line no-console
+  console.log(`[DEBUG] Using Ollama API URL: ${apiUrl}`);
   return {
     provider,
     model,
@@ -100,7 +105,7 @@ export function createTestAIConfig(
     frequencyPenalty: 0,
     presencePenalty: 0,
     offline: false,
-    apiUrl: 'http://localhost:11434',
+    apiUrl,
   };
 }
 

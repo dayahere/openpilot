@@ -60,9 +60,14 @@ export abstract class BaseAIProvider {
 // Ollama Provider
 export class OllamaProvider extends BaseAIProvider {
   constructor(config: AIConfig) {
+    // Always use OLLAMA_API_URL if set, else config.apiUrl, never fallback to localhost or ollama unless explicitly set
+    let apiUrl = process.env.OLLAMA_API_URL || config.apiUrl;
+    if (typeof console !== 'undefined') {
+      console.log('[OllamaProvider] Using API URL:', apiUrl);
+    }
     super({
       ...config,
-      apiUrl: config.apiUrl || 'http://localhost:11434',
+      apiUrl,
     });
   }
 
