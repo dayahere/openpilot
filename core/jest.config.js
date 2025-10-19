@@ -21,6 +21,6 @@ module.exports = {
     },
   },
   moduleNameMapper: {
-    '^uuid$': '<rootDir>/../../node_modules/uuid/dist/index.js',
+    '^uuid$': '<rootDir>/../../node_modules/.pnpm/uuid@9.0.1/node_modules/uuid/dist/index.js',
   },
 };
