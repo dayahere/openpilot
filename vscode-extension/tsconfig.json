@@ -13,6 +13,7 @@
         // "rootDir":  "./src",
         "sourceMap":  true,
         "types": ["vscode", "node"]
+    , "mocha"
                         },
     "exclude":  [
         "node_modules",
