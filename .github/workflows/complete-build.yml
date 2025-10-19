@@ -69,7 +69,6 @@ jobs:
         run: |
           cp core/openpilot-core-*.tgz desktop/
           cp core/openpilot-core-*.tgz web/
-          cp core/openpilot-core-*.tgz vscode-extension/
       - name: Clean npm cache
         run: npm cache clean --force
       - name: Install workspace dependencies
