@@ -145,9 +145,19 @@ jobs:
       - name: Hoist node_modules for VSCE compatibility
         working-directory: ./vscode-extension
         run: pnpm install --shamefully-hoist
-      - name: Build VSCode extension
+      - name: Patch @openpilot/core version for VSCE
         working-directory: ./vscode-extension
-        run: pnpm run package
+        run: |
+          sed -i.bak 's/"@openpilot\/core": "workspace:\*"/"@openpilot\/core": "1.0.0"/' package.json
+      - name: Install npm-compatible dependencies
+        working-directory: ./vscode-extension
+        run: |
+          pnpm install --shamefully-hoist
+          pnpm exec vsce package --no-dependencies
+      - name: Restore workspace protocol in package.json
+        working-directory: ./vscode-extension
+        run: |
+          mv package.json.bak package.json
       - name: Upload VSCode extension
         uses: actions/upload-artifact@v4
         with:
