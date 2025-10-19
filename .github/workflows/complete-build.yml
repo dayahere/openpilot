@@ -152,7 +152,7 @@ jobs:
       - name: Install npm-compatible dependencies
         working-directory: ./vscode-extension
         run: |
-          pnpm install --shamefully-hoist
+          pnpm install --shamefully-hoist --no-frozen-lockfile
           pnpm exec vsce package --no-dependencies
       - name: Restore workspace protocol in package.json
         working-directory: ./vscode-extension
