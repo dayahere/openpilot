@@ -153,7 +153,12 @@ jobs:
         working-directory: ./vscode-extension
         run: |
           pnpm install --shamefully-hoist --no-frozen-lockfile
-          pnpm exec vsce package --no-dependencies
+      - name: Build VSCode extension
+        working-directory: ./vscode-extension
+        run: pnpm run compile
+      - name: Package VSCode extension
+        working-directory: ./vscode-extension
+        run: pnpm exec vsce package --no-dependencies
       - name: Restore workspace protocol in package.json
         working-directory: ./vscode-extension
         run: |
