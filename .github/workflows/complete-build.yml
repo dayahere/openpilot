@@ -148,7 +148,7 @@ jobs:
       - name: Patch @openpilot/core version for VSCE
         working-directory: ./vscode-extension
         run: |
-          sed -i.bak 's/"@openpilot\/core": "workspace:\*"/"@openpilot\/core": "1.0.0"/' package.json
+          sed -i.bak 's/"@openpilot\/core": "workspace:\*"/"@openpilot\/core": "file:..\/core"/' package.json
       - name: Install npm-compatible dependencies
         working-directory: ./vscode-extension
         run: |
